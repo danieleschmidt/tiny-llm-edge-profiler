@@ -1,0 +1,419 @@
+name: Security Scanning
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    # Run security scans daily at 3 AM UTC
+    - cron: '0 3 * * *'
+  workflow_dispatch:  # Manual trigger
+
+permissions:
+  actions: read
+  contents: read
+  security-events: write
+
+jobs:
+  # =============================================================================
+  # CodeQL Analysis
+  # =============================================================================
+  codeql:
+    name: CodeQL Analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [ 'python' ]
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v2
+      with:
+        languages: ${{ matrix.language }}
+        queries: security-extended,security-and-quality
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        cache: 'pip'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install -e .
+    
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v2
+      with:
+        category: "/language:${{matrix.language}}"
+
+  # =============================================================================
+  # Dependency Vulnerability Scanning
+  # =============================================================================
+  dependency-scan:
+    name: Dependency Security Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        cache: 'pip'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install safety pip-audit
+    
+    - name: Run Safety check
+      run: |
+        safety check --json --output safety-report.json || true
+        safety check --output safety-report.txt || true
+    
+    - name: Run pip-audit
+      run: |
+        pip-audit --format=json --output=pip-audit-report.json || true
+        pip-audit --format=cyclonedx-json --output=sbom.json || true
+    
+    - name: Upload SBOM
+      uses: actions/upload-artifact@v3
+      with:
+        name: software-bill-of-materials
+        path: sbom.json
+    
+    - name: Upload security reports
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: dependency-security-reports
+        path: |
+          safety-report.json
+          safety-report.txt
+          pip-audit-report.json
+
+  # =============================================================================
+  # SAST (Static Application Security Testing)
+  # =============================================================================
+  sast:
+    name: Static Security Analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        cache: 'pip'
+    
+    - name: Install security tools
+      run: |
+        python -m pip install --upgrade pip
+        pip install bandit[toml] semgrep
+        pip install -r requirements.txt
+    
+    - name: Run Bandit security linter
+      run: |
+        bandit -r src/ -f json -o bandit-report.json || true
+        bandit -r src/ -f txt -o bandit-report.txt || true
+    
+    - name: Run Semgrep security scanner
+      run: |
+        semgrep --config=auto --json --output=semgrep-report.json src/ || true
+        semgrep --config=auto --output=semgrep-report.txt src/ || true
+    
+    - name: Upload SAST reports
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: sast-reports
+        path: |
+          bandit-report.json
+          bandit-report.txt
+          semgrep-report.json
+          semgrep-report.txt
+
+  # =============================================================================
+  # Container Security Scanning
+  # =============================================================================
+  container-scan:
+    name: Container Security Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    
+    - name: Build container image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        target: production
+        tags: tiny-llm-profiler:security-scan
+        load: true
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+    
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: 'tiny-llm-profiler:security-scan'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+    
+    - name: Run Trivy config scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'config'
+        scan-ref: '.'
+        format: 'sarif'
+        output: 'trivy-config-results.sarif'
+    
+    - name: Upload Trivy scan results to GitHub Security tab
+      uses: github/codeql-action/upload-sarif@v2
+      if: always()
+      with:
+        sarif_file: 'trivy-results.sarif'
+    
+    - name: Upload Trivy config results to GitHub Security tab
+      uses: github/codeql-action/upload-sarif@v2
+      if: always()
+      with:
+        sarif_file: 'trivy-config-results.sarif'
+    
+    - name: Generate detailed Trivy report
+      run: |
+        docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+          -v $(pwd):/workspace \
+          aquasec/trivy image \
+          --format json \
+          --output /workspace/trivy-detailed-report.json \
+          tiny-llm-profiler:security-scan
+    
+    - name: Upload detailed Trivy report
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: trivy-detailed-report
+        path: trivy-detailed-report.json
+
+  # =============================================================================
+  # Infrastructure as Code Security
+  # =============================================================================
+  iac-scan:
+    name: Infrastructure Security Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Run Checkov IaC scanner
+      uses: bridgecrewio/checkov-action@master
+      with:
+        directory: .
+        framework: dockerfile,yaml,github_configuration
+        output_format: sarif
+        output_file_path: checkov-results.sarif
+    
+    - name: Upload Checkov results to GitHub Security tab
+      uses: github/codeql-action/upload-sarif@v2
+      if: always()
+      with:
+        sarif_file: checkov-results.sarif
+    
+    - name: Scan Kubernetes configurations
+      if: hashFiles('k8s/**/*.yaml') != ''
+      run: |
+        # Install kube-score if k8s configs exist
+        wget https://github.com/zegl/kube-score/releases/latest/download/kube-score_linux_amd64.tar.gz
+        tar -xzf kube-score_linux_amd64.tar.gz
+        ./kube-score score k8s/**/*.yaml --output-format json > kube-score-report.json || true
+    
+    - name: Upload infrastructure scan results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: iac-security-reports
+        path: |
+          checkov-results.sarif
+          kube-score-report.json
+
+  # =============================================================================
+  # Secret Detection
+  # =============================================================================
+  secret-scan:
+    name: Secret Detection
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Full history for comprehensive scanning
+    
+    - name: Run TruffleHog secret scanner
+      uses: trufflesecurity/trufflehog@main
+      with:
+        path: ./
+        base: main
+        head: HEAD
+        extra_args: --debug --only-verified
+    
+    - name: Run GitLeaks secret scanner
+      uses: gitleaks/gitleaks-action@v2
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE}}
+    
+    - name: Scan for hardcoded secrets in configuration files
+      run: |
+        # Custom secret patterns
+        echo "Scanning for potential secrets in config files..."
+        grep -r -n -i -E "(password|secret|key|token|api_key)" --include="*.yaml" --include="*.yml" --include="*.json" --include="*.env*" . || true
+        
+        # Check for common secret patterns
+        grep -r -n -E "AKIA[0-9A-Z]{16}" . || true  # AWS Access Key
+        grep -r -n -E "sk_[a-z]+_[a-zA-Z0-9]+" . || true  # Stripe keys
+        grep -r -n -E "xox[baprs]-[a-zA-Z0-9-]+" . || true  # Slack tokens
+
+  # =============================================================================
+  # License Compliance
+  # =============================================================================
+  license-scan:
+    name: License Compliance Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        cache: 'pip'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pip-licenses licensecheck
+        pip install -r requirements.txt
+    
+    - name: Check Python package licenses
+      run: |
+        pip-licenses --format json --output-file python-licenses.json
+        pip-licenses --format plain --output-file python-licenses.txt
+    
+    - name: Run license compatibility check
+      run: |
+        licensecheck --zero-exit --format json . > license-check-report.json || true
+        licensecheck --zero-exit . > license-check-report.txt || true
+    
+    - name: Upload license reports
+      uses: actions/upload-artifact@v3
+      with:
+        name: license-reports
+        path: |
+          python-licenses.json
+          python-licenses.txt
+          license-check-report.json
+          license-check-report.txt
+
+  # =============================================================================
+  # Security Summary Report
+  # =============================================================================
+  security-summary:
+    name: Security Summary
+    runs-on: ubuntu-latest
+    if: always()
+    needs: [codeql, dependency-scan, sast, container-scan, iac-scan, secret-scan, license-scan]
+    
+    steps:
+    - name: Download all security reports
+      uses: actions/download-artifact@v3
+    
+    - name: Generate security summary
+      run: |
+        echo "# Security Scan Summary" > security-summary.md
+        echo "" >> security-summary.md
+        echo "## Scan Results" >> security-summary.md
+        echo "" >> security-summary.md
+        echo "| Scan Type | Status |" >> security-summary.md
+        echo "|-----------|--------|" >> security-summary.md
+        echo "| CodeQL | ${{ needs.codeql.result }} |" >> security-summary.md
+        echo "| Dependency Scan | ${{ needs.dependency-scan.result }} |" >> security-summary.md
+        echo "| SAST | ${{ needs.sast.result }} |" >> security-summary.md
+        echo "| Container Scan | ${{ needs.container-scan.result }} |" >> security-summary.md
+        echo "| IaC Scan | ${{ needs.iac-scan.result }} |" >> security-summary.md
+        echo "| Secret Scan | ${{ needs.secret-scan.result }} |" >> security-summary.md
+        echo "| License Scan | ${{ needs.license-scan.result }} |" >> security-summary.md
+        echo "" >> security-summary.md
+        echo "Generated on: $(date)" >> security-summary.md
+        
+        cat security-summary.md
+    
+    - name: Upload security summary
+      uses: actions/upload-artifact@v3
+      with:
+        name: security-summary
+        path: security-summary.md
+    
+    - name: Comment security summary on PR
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const fs = require('fs');
+          const summary = fs.readFileSync('security-summary.md', 'utf8');
+          
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: summary
+          });
+    
+    - name: Fail if critical security issues found
+      run: |
+        echo "Checking for critical security failures..."
+        
+        FAILED_SCANS=""
+        if [[ "${{ needs.codeql.result }}" == "failure" ]]; then
+          FAILED_SCANS="$FAILED_SCANS CodeQL"
+        fi
+        if [[ "${{ needs.secret-scan.result }}" == "failure" ]]; then
+          FAILED_SCANS="$FAILED_SCANS SecretScan"
+        fi
+        
+        if [[ -n "$FAILED_SCANS" ]]; then
+          echo "❌ Critical security scans failed: $FAILED_SCANS"
+          exit 1
+        else
+          echo "✅ All critical security scans passed"
+        fi

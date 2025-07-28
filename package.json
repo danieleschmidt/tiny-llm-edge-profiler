@@ -1,0 +1,102 @@
+{
+  "name": "tiny-llm-edge-profiler",
+  "version": "0.1.0",
+  "description": "Comprehensive profiling toolkit for running quantized LLMs on edge devices",
+  "main": "index.js",
+  "private": true,
+  "scripts": {
+    "install": "pip install -e .",
+    "install:dev": "pip install -e '.[dev]'",
+    "test": "pytest tests/ -v",
+    "test:coverage": "pytest tests/ --cov=src --cov-report=html --cov-report=term --cov-report=xml",
+    "test:hardware": "pytest tests/hardware/ -v --hardware",
+    "test:parallel": "pytest tests/ -n auto",
+    "test:watch": "ptw tests/",
+    "lint": "npm run lint:python && npm run lint:yaml",
+    "lint:python": "flake8 src tests && pylint src && mypy src",
+    "lint:yaml": "yamllint .github/ docs/ .devcontainer/",
+    "format": "black src tests && isort src tests",
+    "format:check": "black --check src tests && isort --check-only src tests",
+    "typecheck": "mypy src tests",
+    "security": "bandit -r src/ && safety check",
+    "deps:check": "pip-audit",
+    "deps:update": "pip-compile requirements.in && pip-compile requirements-dev.in",
+    "build": "python -m build",
+    "build:firmware": "npm run build:firmware:esp32 && npm run build:firmware:stm32",
+    "build:firmware:esp32": "cd firmware/esp32 && idf.py build",
+    "build:firmware:stm32": "cd firmware/stm32 && make clean && make all",
+    "build:docs": "cd docs && make html",
+    "serve:docs": "cd docs/_build/html && python -m http.server 8000",
+    "clean": "npm run clean:python && npm run clean:firmware && npm run clean:docs",
+    "clean:python": "find . -type f -name '*.pyc' -delete && find . -type d -name '__pycache__' -delete && rm -rf build/ dist/ *.egg-info/ .coverage htmlcov/ .pytest_cache/",
+    "clean:firmware": "cd firmware/esp32 && idf.py clean || true && cd ../stm32 && make clean || true",
+    "clean:docs": "cd docs && make clean",
+    "dev": "python -m tiny_llm_profiler.cli --debug",
+    "benchmark": "python scripts/run_benchmarks.py",
+    "profile": "python scripts/profile_models.py",
+    "setup:hardware": "python scripts/setup_hardware.py",
+    "flash:esp32": "cd firmware/esp32 && idf.py flash",
+    "flash:stm32": "openocd -f interface/stlink.cfg -f target/stm32f7x.cfg -c 'program firmware/stm32/build/profiler.bin 0x08000000 verify reset exit'",
+    "monitor:esp32": "cd firmware/esp32 && idf.py monitor",
+    "monitor:serial": "picocom -b 921600 /dev/ttyUSB0",
+    "validate": "npm run format:check && npm run lint && npm run typecheck && npm run test:coverage && npm run security",
+    "precommit": "pre-commit run --all-files",
+    "release": "semantic-release",
+    "docker:build": "docker build -t tiny-llm-profiler .",
+    "docker:run": "docker run -it --privileged -v /dev:/dev -v $(pwd):/workspace tiny-llm-profiler",
+    "docker:test": "docker run --rm -v $(pwd):/workspace tiny-llm-profiler npm test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/your-org/tiny-llm-edge-profiler.git"
+  },
+  "keywords": [
+    "edge-ai",
+    "llm",
+    "quantization",
+    "profiling", 
+    "microcontroller",
+    "esp32",
+    "stm32",
+    "risc-v",
+    "embedded",
+    "performance",
+    "optimization",
+    "tinyml",
+    "iot"
+  ],
+  "author": "Your Organization <contact@your-org.com>",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/your-org/tiny-llm-edge-profiler/issues"
+  },
+  "homepage": "https://github.com/your-org/tiny-llm-edge-profiler#readme",
+  "devDependencies": {
+    "@commitlint/cli": "^17.0.0",
+    "@commitlint/config-conventional": "^17.0.0",
+    "@semantic-release/changelog": "^6.0.0",
+    "@semantic-release/git": "^10.0.0",
+    "husky": "^8.0.0",
+    "semantic-release": "^19.0.0"
+  },
+  "engines": {
+    "node": ">=16.0.0",
+    "python": ">=3.8.0"
+  },
+  "os": [
+    "linux",
+    "darwin",
+    "win32"
+  ],
+  "config": {
+    "commitizen": {
+      "path": "cz-conventional-changelog"
+    }
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "npm run precommit",
+      "commit-msg": "commitlint -E HUSKY_GIT_PARAMS"
+    }
+  }
+}

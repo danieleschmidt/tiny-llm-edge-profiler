@@ -1,0 +1,155 @@
+{
+  "python.defaultInterpreterPath": "./venv/bin/python",
+  "python.terminal.activateEnvironment": true,
+  "python.linting.enabled": true,
+  "python.linting.pylintEnabled": true,
+  "python.linting.flake8Enabled": true,
+  "python.linting.mypyEnabled": true,
+  "python.linting.banditEnabled": true,
+  "python.formatting.provider": "black",
+  "python.formatting.blackArgs": [
+    "--line-length",
+    "88",
+    "--target-version",
+    "py38"
+  ],
+  "python.sortImports.args": [
+    "--profile",
+    "black"
+  ],
+  "python.testing.pytestEnabled": true,
+  "python.testing.pytestArgs": [
+    "tests"
+  ],
+  "python.testing.unittestEnabled": false,
+  "python.testing.autoTestDiscoverOnSaveEnabled": true,
+  "editor.formatOnSave": true,
+  "editor.formatOnPaste": false,
+  "editor.formatOnType": false,
+  "editor.codeActionsOnSave": {
+    "source.organizeImports": true,
+    "source.fixAll": true
+  },
+  "editor.rulers": [
+    88
+  ],
+  "files.exclude": {
+    "**/__pycache__": true,
+    "**/*.pyc": true,
+    "**/node_modules": true,
+    ".pytest_cache": true,
+    ".coverage": true,
+    "htmlcov/": true,
+    "dist/": true,
+    "build/": true,
+    "*.egg-info/": true,
+    ".mypy_cache/": true,
+    ".tox/": true,
+    "venv/": true,
+    ".env": true
+  },
+  "files.watcherExclude": {
+    "**/__pycache__/**": true,
+    "**/node_modules/**": true,
+    "**/.git/**": true,
+    "**/build/**": true,
+    "**/dist/**": true,
+    "**/.venv/**": true,
+    "**/venv/**": true
+  },
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/bower_components": true,
+    "**/*.code-search": true,
+    "**/__pycache__": true,
+    "**/.pytest_cache": true,
+    "**/htmlcov": true,
+    "**/build": true,
+    "**/dist": true,
+    "**/*.egg-info": true
+  },
+  "yaml.schemas": {
+    "https://json.schemastore.org/github-workflow.json": ".github/workflows/*.yml",
+    "https://json.schemastore.org/github-issue-config.json": ".github/ISSUE_TEMPLATE/config.yml",
+    "https://json.schemastore.org/dependabot-2.0.json": ".github/dependabot.yml"
+  },
+  "yaml.format.enable": true,
+  "yaml.validate": true,
+  "emmet.includeLanguages": {
+    "markdown": "html"
+  },
+  "markdown.extension.toc.levels": "2..6",
+  "markdown.extension.list.indentationSize": "adaptive",
+  "todo-tree.general.tags": [
+    "TODO",
+    "FIXME",
+    "HACK",
+    "NOTE",
+    "XXX",
+    "BUG",
+    "OPTIMIZE"
+  ],
+  "todo-tree.highlights.defaultHighlight": {
+    "icon": "alert",
+    "type": "tag",
+    "foreground": "red",
+    "background": "white",
+    "opacity": 50,
+    "iconColour": "blue"
+  },
+  "todo-tree.highlights.customHighlight": {
+    "TODO": {
+      "icon": "check",
+      "foreground": "black",
+      "iconColour": "yellow",
+      "gutterIcon": true
+    },
+    "FIXME": {
+      "foreground": "red",
+      "iconColour": "red",
+      "gutterIcon": true
+    },
+    "NOTE": {
+      "icon": "note",
+      "foreground": "blue",
+      "iconColour": "blue",
+      "gutterIcon": true
+    }
+  },
+  "cSpell.words": [
+    "esptool",
+    "openocd",
+    "platformio",
+    "pytest",
+    "pylint",
+    "mypy",
+    "bandit",
+    "tinyml",
+    "quantization",
+    "microcontroller",
+    "profiler",
+    "inference",
+    "latency",
+    "throughput"
+  ],
+  "extensions.ignoreRecommendations": false,
+  "workbench.editorAssociations": {
+    "*.ipynb": "jupyter-notebook"
+  },
+  "jupyter.askForKernelRestart": false,
+  "jupyter.interactiveWindow.collapseCellInputCode": "firstLine",
+  "git.enableSmartCommit": true,
+  "git.confirmSync": false,
+  "git.autofetch": true,
+  "terminal.integrated.defaultProfile.linux": "bash",
+  "terminal.integrated.profiles.linux": {
+    "bash": {
+      "path": "bash",
+      "args": ["-l"]
+    }
+  },
+  "cmake.configureOnOpen": false,
+  "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
+  "platformio-ide.autoRebuildAutocompleteIndex": true,
+  "platformio-ide.activateProjectOnTextEditorOpened": true
+}

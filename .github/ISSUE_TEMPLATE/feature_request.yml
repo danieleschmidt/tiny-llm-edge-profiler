@@ -1,0 +1,224 @@
+name: Feature Request
+description: Suggest a new feature or enhancement
+title: "[FEATURE] "
+labels: ["enhancement", "needs-triage"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for suggesting a new feature! 
+        
+        We appreciate your ideas for improving the Tiny LLM Edge Profiler.
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Pre-submission Checklist
+      description: Please verify these items before submitting
+      options:
+        - label: I have searched for existing feature requests that describe the same functionality
+          required: true
+        - label: I have read the [roadmap](https://github.com/your-org/tiny-llm-edge-profiler/blob/main/docs/ROADMAP.md) and this feature is not already planned
+          required: true
+        - label: This feature aligns with the project's goals and scope
+          required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem Statement
+      description: What problem does this feature solve? What use case does it address?
+      placeholder: |
+        Describe the problem or limitation you're facing:
+        - What are you trying to accomplish?
+        - What obstacles are you encountering?
+        - How does this impact your workflow?
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution
+      description: Describe the feature you'd like to see implemented
+      placeholder: |
+        Describe your proposed solution:
+        - How should this feature work?
+        - What should the user interface look like?
+        - What should the API look like (if applicable)?
+    validations:
+      required: true
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Feature Category
+      description: Which area of the project does this feature relate to?
+      options:
+        - Platform Support (new device/platform)
+        - Model Support (new model formats/architectures)
+        - Profiling Metrics (new measurements)
+        - Analysis & Reporting (data processing/visualization)
+        - CLI/API Interface (user experience)
+        - Performance Optimization
+        - Hardware Integration (sensors, communication)
+        - Documentation & Examples
+        - Developer Tools & Workflow
+        - Security & Authentication
+        - Other (please specify in description)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Target Platform(s)
+      description: Which platforms should this feature support?
+      multiple: true
+      options:
+        - All platforms
+        - ESP32/ESP32-S3
+        - STM32 (F4/F7)
+        - RP2040
+        - Nordic nRF52
+        - RISC-V (K210, BL602)
+        - Single-board computers (Pi, Jetson)
+        - Host system only
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternative Solutions
+      description: Have you considered any alternative solutions or workarounds?
+      placeholder: |
+        Describe any alternatives you've considered:
+        - Other ways to solve the same problem
+        - Existing workarounds you're using
+        - Why those alternatives are not sufficient
+
+  - type: textarea
+    id: benefits
+    attributes:
+      label: Benefits & Impact
+      description: Who would benefit from this feature and how?
+      placeholder: |
+        Describe the benefits:
+        - Who would use this feature?
+        - How would it improve their workflow?
+        - What broader impact would it have?
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      description: How important is this feature to you?
+      options:
+        - Critical (blocking my work)
+        - High (significantly improves my workflow)
+        - Medium (nice to have)
+        - Low (minor improvement)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: complexity
+    attributes:
+      label: Estimated Complexity
+      description: How complex do you think this feature would be to implement?
+      options:
+        - Simple (few hours of work)
+        - Moderate (few days of work)
+        - Complex (few weeks of work)
+        - Very Complex (months of work)
+        - Unknown
+
+  - type: textarea
+    id: examples
+    attributes:
+      label: Usage Examples
+      description: Provide examples of how this feature would be used
+      placeholder: |
+        Example usage:
+        ```bash
+        # Command line example
+        tiny-profiler new-feature --option value
+        ```
+        
+        ```python
+        # API example
+        profiler = EdgeProfiler()
+        result = profiler.new_feature()
+        ```
+        
+        ```yaml
+        # Configuration example
+        new_feature:
+          enabled: true
+          option: value
+        ```
+      render: markdown
+
+  - type: textarea
+    id: implementation
+    attributes:
+      label: Implementation Ideas
+      description: Do you have any ideas about how this could be implemented?
+      placeholder: |
+        If you have technical ideas about implementation:
+        - Architecture considerations
+        - Required dependencies
+        - Integration points
+        - Potential challenges
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance Criteria
+      description: How would you know this feature is complete and working correctly?
+      placeholder: |
+        Define what "done" looks like:
+        - [ ] Feature works on target platforms
+        - [ ] Documentation is updated
+        - [ ] Examples are provided
+        - [ ] Tests are included
+        - [ ] Performance requirements are met
+
+  - type: textarea
+    id: references
+    attributes:
+      label: References
+      description: Links to relevant documentation, papers, or similar implementations
+      placeholder: |
+        Relevant links:
+        - Research papers
+        - Documentation
+        - Similar projects
+        - Standards or specifications
+
+  - type: checkboxes
+    id: contribution
+    attributes:
+      label: Contribution
+      description: Are you willing to help implement this feature?
+      options:
+        - label: I can help with design and requirements
+        - label: I can contribute code
+        - label: I can help with testing
+        - label: I can help with documentation
+        - label: I can provide hardware for testing
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: Any other information that would be helpful
+      placeholder: |
+        Additional context:
+        - Mockups or diagrams
+        - Related feature requests
+        - Timeline considerations
+        - Budget or resource constraints

@@ -1,0 +1,296 @@
+[build-system]
+requires = ["setuptools>=45", "wheel", "setuptools_scm[toml]>=6.2"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tiny-llm-edge-profiler"
+dynamic = ["version"]
+description = "Comprehensive profiling toolkit for running quantized LLMs on edge devices"
+readme = "README.md"
+license = {text = "Apache-2.0"}
+authors = [
+    {name = "Your Organization", email = "contact@your-org.com"},
+]
+maintainers = [
+    {name = "Your Organization", email = "contact@your-org.com"},
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Embedded Systems",
+    "Topic :: System :: Hardware",
+    "Topic :: System :: Monitoring",
+]
+keywords = [
+    "edge-ai", "llm", "quantization", "profiling", "microcontroller",
+    "esp32", "stm32", "risc-v", "embedded", "performance", "optimization",
+    "tinyml", "iot", "machine-learning", "inference"
+]
+requires-python = ">=3.8"
+dependencies = [
+    "numpy>=1.21.0",
+    "scipy>=1.7.0",
+    "pandas>=1.3.0",
+    "matplotlib>=3.4.0",
+    "plotly>=5.0.0",
+    "seaborn>=0.11.0",
+    "torch>=1.11.0",
+    "onnx>=1.12.0",
+    "onnxruntime>=1.12.0",
+    "transformers>=4.20.0",
+    "pyserial>=3.5",
+    "pyusb>=1.2.1",
+    "smbus2>=0.4.0",
+    "pyyaml>=6.0",
+    "click>=8.0.0",
+    "python-dotenv>=0.19.0",
+    "pydantic>=1.9.0",
+    "tqdm>=4.62.0",
+    "requests>=2.25.0",
+    "filelock>=3.4.0",
+    "psutil>=5.8.0",
+    "structlog>=21.1.0",
+    "prometheus-client>=0.11.0",
+    "packaging>=21.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "black>=22.0.0",
+    "isort>=5.10.0",
+    "flake8>=4.0.0",
+    "pylint>=2.12.0",
+    "mypy>=0.950",
+    "bandit>=1.7.0",
+    "safety>=2.0.0",
+    "pip-audit>=2.0.0",
+    "pytest>=7.0.0",
+    "pytest-cov>=3.0.0",
+    "pytest-xdist>=2.5.0",
+    "pytest-mock>=3.7.0",
+    "pytest-asyncio>=0.18.0",
+    "hypothesis>=6.50.0",
+    "factory-boy>=3.2.0",
+    "pre-commit>=2.17.0",
+    "tox>=3.24.0",
+    "nox>=2022.1.7",
+    "pip-tools>=6.5.0",
+]
+docs = [
+    "sphinx>=4.5.0",
+    "sphinx-rtd-theme>=1.0.0",
+    "myst-parser>=0.17.0",
+    "sphinx-autodoc-typehints>=1.17.0",
+    "sphinx-click>=4.0.0",
+]
+test = [
+    "pytest>=7.0.0",
+    "pytest-cov>=3.0.0",
+    "pytest-xdist>=2.5.0",
+    "pytest-mock>=3.7.0",
+    "pytest-asyncio>=0.18.0",
+    "hypothesis>=6.50.0",
+    "factory-boy>=3.2.0",
+    "pyfakefs>=4.5.0",
+]
+hardware = [
+    "pyserial>=3.5",
+    "pyusb>=1.2.1",
+    "smbus2>=0.4.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/your-org/tiny-llm-edge-profiler"
+Documentation = "https://docs.your-org.com/tiny-llm-profiler"
+Repository = "https://github.com/your-org/tiny-llm-edge-profiler"
+"Bug Tracker" = "https://github.com/your-org/tiny-llm-edge-profiler/issues"
+Changelog = "https://github.com/your-org/tiny-llm-edge-profiler/blob/main/CHANGELOG.md"
+
+[project.scripts]
+tiny-profiler = "tiny_llm_profiler.cli:main"
+edge-profiler = "tiny_llm_profiler.cli:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+tiny_llm_profiler = [
+    "firmware/*.bin",
+    "configs/*.yaml", 
+    "templates/*.html",
+    "schemas/*.json",
+]
+
+[tool.setuptools_scm]
+write_to = "src/tiny_llm_profiler/_version.py"
+
+# Black configuration
+[tool.black]
+line-length = 88
+target-version = ['py38', 'py39', 'py310', 'py311']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # directories
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | build
+  | dist
+  | firmware
+)/
+'''
+
+# isort configuration
+[tool.isort]
+profile = "black"
+line_length = 88
+known_first_party = ["tiny_llm_profiler"]
+known_third_party = ["numpy", "pandas", "matplotlib", "torch", "onnx"]
+skip = ["venv", ".venv", "build", "dist"]
+
+# pytest configuration
+[tool.pytest.ini_options]
+minversion = "7.0"
+addopts = [
+    "-ra",
+    "--strict-markers",
+    "--strict-config",
+    "--cov=tiny_llm_profiler",
+    "--cov-report=term-missing",
+    "--cov-report=html",
+    "--cov-report=xml",
+]
+testpaths = ["tests"]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "hardware: marks tests that require hardware (deselect with '-m \"not hardware\"')",
+    "integration: marks tests as integration tests",
+    "unit: marks tests as unit tests",
+    "esp32: marks tests specific to ESP32 platform",
+    "stm32: marks tests specific to STM32 platform",
+    "riscv: marks tests specific to RISC-V platform",
+]
+filterwarnings = [
+    "error",
+    "ignore::UserWarning",
+    "ignore::DeprecationWarning",
+]
+
+# Coverage configuration
+[tool.coverage.run]
+source = ["src"]
+omit = [
+    "*/tests/*",
+    "*/test_*",
+    "*/__init__.py",
+    "*/setup.py",
+    "*/venv/*",
+    "*/.venv/*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self.debug:",
+    "if settings.DEBUG",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if 0:",
+    "if __name__ == .__main__.:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+]
+
+[tool.coverage.html]
+directory = "htmlcov"
+
+# MyPy configuration
+[tool.mypy]
+python_version = "3.8"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+strict_equality = true
+show_error_codes = true
+
+[[tool.mypy.overrides]]
+module = ["tests.*"]
+disallow_untyped_defs = false
+
+[[tool.mypy.overrides]]
+module = [
+    "serial.*",
+    "usb.*",
+    "smbus2.*",
+    "torch.*",
+    "onnx.*",
+    "onnxruntime.*",
+    "transformers.*",
+    "plotly.*",
+    "seaborn.*",
+]
+ignore_missing_imports = true
+
+# Pylint configuration
+[tool.pylint.messages_control]
+disable = [
+    "C0330",  # Wrong hanging indentation
+    "C0326",  # Bad whitespace
+    "R0903",  # Too few public methods
+    "R0913",  # Too many arguments
+    "W0613",  # Unused argument
+]
+
+[tool.pylint.format]
+max-line-length = 88
+
+[tool.pylint.design]
+max-args = 10
+max-locals = 20
+max-returns = 6
+max-branches = 15
+max-statements = 60
+max-parents = 10
+max-attributes = 20
+max-public-methods = 30
+
+# Bandit configuration
+[tool.bandit]
+exclude_dirs = ["tests", "docs", "scripts"]
+skips = ["B101", "B601"]  # Skip assert and shell usage warnings
+
+# Commitizen configuration
+[tool.commitizen]
+name = "cz_conventional_commits"
+version = "0.1.0"
+tag_format = "v$version"
+version_files = [
+    "src/tiny_llm_profiler/__init__.py",
+    "pyproject.toml:version"
+]

@@ -205,3 +205,76 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# Embedded development files
+*.bin
+*.hex
+*.elf
+*.map
+*.o
+*.d
+*.su
+*.list
+*.sym
+
+# ESP-IDF specific
+esp-idf/
+sdkconfig
+sdkconfig.old
+.pio/
+.platformio/
+firmware/esp32/build/
+firmware/esp32/sdkconfig*
+
+# STM32 specific
+firmware/stm32/build/
+firmware/stm32/Debug/
+firmware/stm32/Release/
+*.uvguix.*
+*.uvoptx
+*.bak
+*.orig
+
+# ARM/GCC specific
+*.axf
+*.scvd
+*.iex
+
+# OpenOCD
+openocd.log
+
+# Hardware profiling data
+results/
+logs/
+*.pcap
+*.trace
+
+# Model files (can be large)
+models/
+*.gguf
+*.bin
+*.onnx
+*.safetensors
+*.pt
+*.pth
+*.h5
+*.pb
+
+# Configuration files with secrets
+config.local.*
+.secrets
+
+# Benchmark and profiling results
+benchmark_results/
+profiling_results/
+performance_data/
+
+# Hardware-specific calibration data
+calibration/
+*.cal
+
+# Firmware signing keys
+*.key
+*.pem
+*.crt
+signing/

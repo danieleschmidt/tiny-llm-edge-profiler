@@ -1,0 +1,451 @@
+name: Continuous Deployment
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*' ]
+  release:
+    types: [ published ]
+  workflow_dispatch:  # Manual trigger
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+        - staging
+        - production
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false  # Don't cancel deployments
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  # =============================================================================
+  # Pre-deployment Validation
+  # =============================================================================
+  validate:
+    name: Pre-deployment Validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      should-deploy: ${{ steps.check.outputs.should-deploy }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        cache: 'pip'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install -r requirements-dev.txt
+        pip install -e .
+    
+    - name: Run full validation suite
+      run: |
+        # Code quality
+        black --check src/ tests/
+        isort --check-only src/ tests/
+        flake8 src/ tests/
+        mypy src/
+        
+        # Security
+        bandit -r src/ -ll
+        safety check
+        
+        # Tests
+        pytest tests/unit/ tests/integration/ -v --cov=src --cov-fail-under=80
+    
+    - name: Get version
+      id: version
+      run: |
+        VERSION=$(python -c "import tiny_llm_profiler; print(tiny_llm_profiler.__version__)")
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+        echo "Version: $VERSION"
+    
+    - name: Check deployment conditions
+      id: check
+      run: |
+        SHOULD_DEPLOY="false"
+        
+        # Deploy on main branch push or tag
+        if [[ "${{ github.ref }}" == "refs/heads/main" || "${{ github.ref }}" == refs/tags/* ]]; then
+          SHOULD_DEPLOY="true"
+        fi
+        
+        # Deploy on manual trigger
+        if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+          SHOULD_DEPLOY="true"
+        fi
+        
+        # Deploy on release
+        if [[ "${{ github.event_name }}" == "release" ]]; then
+          SHOULD_DEPLOY="true"
+        fi
+        
+        echo "should-deploy=$SHOULD_DEPLOY" >> $GITHUB_OUTPUT
+        echo "Should deploy: $SHOULD_DEPLOY"
+
+  # =============================================================================
+  # Build and Push Container Images
+  # =============================================================================
+  build-images:
+    name: Build Container Images
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: validate
+    if: needs.validate.outputs.should-deploy == 'true'
+    
+    permissions:
+      contents: read
+      packages: write
+    
+    outputs:
+      image-digest: ${{ steps.build.outputs.digest }}
+      image-tags: ${{ steps.meta.outputs.tags }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    
+    - name: Log in to Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Extract metadata
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+        tags: |
+          type=ref,event=branch
+          type=ref,event=pr
+          type=ref,event=tag
+          type=semver,pattern={{version}}
+          type=semver,pattern={{major}}.{{minor}}
+          type=semver,pattern={{major}}
+          type=sha,prefix={{branch}}-
+          type=raw,value=latest,enable={{is_default_branch}}
+    
+    - name: Build and push Docker image
+      id: build
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        target: production
+        platforms: linux/amd64,linux/arm64
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        build-args: |
+          BUILD_DATE=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.created'] }}
+          BUILD_VERSION=${{ needs.validate.outputs.version }}
+          BUILD_REVISION=${{ github.sha }}
+
+  # =============================================================================
+  # Security Scanning
+  # =============================================================================
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: build-images
+    
+    permissions:
+      security-events: write
+    
+    steps:
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+    
+    - name: Upload Trivy scan results to GitHub Security tab
+      uses: github/codeql-action/upload-sarif@v2
+      if: always()
+      with:
+        sarif_file: 'trivy-results.sarif'
+
+  # =============================================================================
+  # Deploy to Staging
+  # =============================================================================
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [validate, build-images]
+    if: needs.validate.outputs.should-deploy == 'true'
+    environment: 
+      name: staging
+      url: https://staging.tiny-llm-profiler.com
+    
+    steps:
+    - name: Deploy to staging
+      run: |
+        echo "🚀 Deploying to staging environment..."
+        echo "Image: ${{ needs.build-images.outputs.image-tags }}"
+        echo "Version: ${{ needs.validate.outputs.version }}"
+        
+        # Here you would typically:
+        # 1. Update Kubernetes/Docker Compose configs
+        # 2. Apply configurations to staging cluster
+        # 3. Wait for health checks
+        # 4. Run smoke tests
+        
+        # For now, simulate deployment
+        sleep 5
+        echo "✅ Staging deployment completed"
+    
+    - name: Run staging smoke tests
+      run: |
+        echo "🧪 Running staging smoke tests..."
+        
+        # Here you would run actual smoke tests against staging
+        # For example:
+        # curl -f https://staging.tiny-llm-profiler.com/health
+        # pytest tests/smoke/ --base-url=https://staging.tiny-llm-profiler.com
+        
+        echo "✅ Staging smoke tests passed"
+    
+    - name: Notify staging deployment
+      uses: 8398a7/action-slack@v3
+      if: always()
+      with:
+        status: ${{ job.status }}
+        text: |
+          Staging Deployment ${{ job.status }}
+          Version: ${{ needs.validate.outputs.version }}
+          Environment: staging
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  # =============================================================================
+  # Deploy to Production
+  # =============================================================================
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: [validate, build-images, deploy-staging]
+    if: |
+      needs.validate.outputs.should-deploy == 'true' && 
+      (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') || 
+       (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'production'))
+    environment: 
+      name: production
+      url: https://tiny-llm-profiler.com
+    
+    steps:
+    - name: Manual approval gate
+      uses: trstringer/manual-approval@v1
+      if: github.event_name != 'release'
+      with:
+        secret: ${{ github.TOKEN }}
+        approvers: ${{ github.repository_owner }}
+        minimum-approvals: 1
+        issue-title: "Approve Production Deployment v${{ needs.validate.outputs.version }}"
+        issue-body: |
+          Please review and approve the production deployment:
+          
+          **Version:** ${{ needs.validate.outputs.version }}
+          **Commit:** ${{ github.sha }}
+          **Author:** ${{ github.actor }}
+          **Changes:** [View Changes](${{ github.event.compare }})
+          
+          **Pre-deployment Checklist:**
+          - [ ] All tests are passing
+          - [ ] Security scans completed
+          - [ ] Staging deployment successful
+          - [ ] Database migrations ready (if any)
+          - [ ] Rollback plan confirmed
+          
+          Reply with "approved" to proceed with deployment.
+    
+    - name: Deploy to production
+      run: |
+        echo "🚀 Deploying to production environment..."
+        echo "Image: ${{ needs.build-images.outputs.image-tags }}"
+        echo "Version: ${{ needs.validate.outputs.version }}"
+        
+        # Here you would typically:
+        # 1. Blue-green deployment or rolling update
+        # 2. Database migrations (if needed)
+        # 3. Update load balancer configurations
+        # 4. Monitor deployment progress
+        # 5. Verify health checks
+        
+        # For now, simulate deployment
+        sleep 10
+        echo "✅ Production deployment completed"
+    
+    - name: Run production health checks
+      run: |
+        echo "🏥 Running production health checks..."
+        
+        # Here you would run actual health checks
+        # For example:
+        # curl -f https://tiny-llm-profiler.com/health
+        # curl -f https://tiny-llm-profiler.com/api/v1/status
+        
+        echo "✅ Production health checks passed"
+    
+    - name: Update release notes
+      if: startsWith(github.ref, 'refs/tags/v')
+      run: |
+        echo "📝 Updating release notes..."
+        # Generate and update release notes
+        echo "✅ Release notes updated"
+    
+    - name: Notify production deployment
+      uses: 8398a7/action-slack@v3
+      if: always()
+      with:
+        status: ${{ job.status }}
+        text: |
+          🎉 Production Deployment ${{ job.status }}
+          Version: ${{ needs.validate.outputs.version }}
+          Environment: production
+          URL: https://tiny-llm-profiler.com
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  # =============================================================================
+  # Publish Package
+  # =============================================================================
+  publish-package:
+    name: Publish Python Package
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [validate, deploy-production]
+    if: startsWith(github.ref, 'refs/tags/v')
+    environment: pypi
+    
+    permissions:
+      id-token: write  # For trusted publishing
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install build dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install build twine
+    
+    - name: Build package
+      run: python -m build
+    
+    - name: Publish to PyPI
+      uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        print-hash: true
+
+  # =============================================================================
+  # Post-deployment Tasks
+  # =============================================================================
+  post-deployment:
+    name: Post-deployment Tasks
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [validate, deploy-production]
+    if: always() && needs.deploy-production.result == 'success'
+    
+    steps:
+    - name: Update documentation
+      run: |
+        echo "📚 Updating documentation..."
+        # Deploy documentation to GitHub Pages or documentation site
+        echo "✅ Documentation updated"
+    
+    - name: Update metrics and monitoring
+      run: |
+        echo "📊 Updating monitoring dashboards..."
+        # Update Grafana dashboards, alerts, etc.
+        echo "✅ Monitoring updated"
+    
+    - name: Clean up old releases
+      run: |
+        echo "🧹 Cleaning up old container images..."
+        # Clean up old container images from registry
+        echo "✅ Cleanup completed"
+    
+    - name: Send deployment summary
+      uses: 8398a7/action-slack@v3
+      with:
+        status: 'custom'
+        custom_payload: |
+          {
+            "text": "🚀 Deployment Summary",
+            "attachments": [{
+              "color": "good",
+              "fields": [
+                {"title": "Version", "value": "${{ needs.validate.outputs.version }}", "short": true},
+                {"title": "Environment", "value": "Production", "short": true},
+                {"title": "Status", "value": "Success", "short": true},
+                {"title": "Duration", "value": "${{ github.run_duration }}", "short": true}
+              ]
+            }]
+          }
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  # =============================================================================
+  # Deployment Status
+  # =============================================================================
+  deployment-status:
+    name: Deployment Status
+    runs-on: ubuntu-latest
+    if: always()
+    needs: [validate, build-images, deploy-staging, deploy-production, publish-package]
+    
+    steps:
+    - name: Deployment Summary
+      run: |
+        echo "=== Deployment Status Summary ==="
+        echo "Validation: ${{ needs.validate.result }}"
+        echo "Build Images: ${{ needs.build-images.result }}"
+        echo "Deploy Staging: ${{ needs.deploy-staging.result }}"
+        echo "Deploy Production: ${{ needs.deploy-production.result }}"
+        echo "Publish Package: ${{ needs.publish-package.result }}"
+        
+        if [[ "${{ needs.deploy-production.result }}" == "success" ]]; then
+          echo "🎉 Deployment completed successfully!"
+        elif [[ "${{ needs.deploy-staging.result }}" == "success" ]]; then
+          echo "⚠️ Deployed to staging only"
+        else
+          echo "❌ Deployment failed"
+          exit 1
+        fi

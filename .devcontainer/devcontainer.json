@@ -1,0 +1,83 @@
+{
+  "name": "Tiny LLM Edge Profiler Development",
+  "image": "mcr.microsoft.com/devcontainers/python:3.11",
+  
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {},
+    "ghcr.io/devcontainers/features/github-cli:1": {},
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "18"
+    }
+  },
+
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "python.defaultInterpreterPath": "/usr/local/bin/python",
+        "python.linting.enabled": true,
+        "python.linting.pylintEnabled": true,
+        "python.linting.flake8Enabled": true,
+        "python.linting.mypyEnabled": true,
+        "python.formatting.provider": "black",
+        "python.formatting.blackArgs": ["--line-length", "88"],
+        "python.sortImports.args": ["--profile", "black"],
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+          "source.organizeImports": true
+        },
+        "files.exclude": {
+          "**/__pycache__": true,
+          "**/*.pyc": true,
+          "**/node_modules": true,
+          ".pytest_cache": true,
+          ".coverage": true,
+          "dist/": true,
+          "build/": true,
+          "*.egg-info/": true
+        }
+      },
+      "extensions": [
+        "ms-python.python",
+        "ms-python.pylint",
+        "ms-python.flake8",
+        "ms-python.mypy-type-checker",
+        "ms-python.black-formatter",
+        "ms-python.isort",
+        "ms-toolsai.jupyter",
+        "github.copilot",
+        "github.vscode-pull-request-github",
+        "ms-vscode.makefile-tools",
+        "ms-vscode.cmake-tools",
+        "platformio.platformio-ide",
+        "redhat.vscode-yaml",
+        "ms-vscode.vscode-json",
+        "eamodio.gitlens",
+        "gruntfuggly.todo-tree",
+        "streetsidesoftware.code-spell-checker"
+      ]
+    }
+  },
+
+  "forwardPorts": [8000, 8080, 5000],
+  
+  "postCreateCommand": "bash .devcontainer/setup.sh",
+  
+  "remoteUser": "vscode",
+  
+  "containerEnv": {
+    "PYTHONPATH": "/workspaces/tiny-llm-edge-profiler/src",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "PYTHONUNBUFFERED": "1"
+  },
+
+  "mounts": [
+    "source=/dev,target=/dev,type=bind,consistency=cached",
+    "source=/var/run/udev,target=/var/run/udev,type=bind,consistency=cached"
+  ],
+
+  "privileged": true,
+
+  "runArgs": [
+    "--device-cgroup-rule=c 188:* rmw"
+  ]
+}

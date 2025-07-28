@@ -1,0 +1,66 @@
+# Development dependencies for Tiny LLM Edge Profiler
+
+# Code formatting and linting
+black>=22.0.0
+isort>=5.10.0
+flake8>=4.0.0
+pylint>=2.12.0
+mypy>=0.950
+
+# Security scanning
+bandit>=1.7.0
+safety>=2.0.0
+pip-audit>=2.0.0
+
+# Testing framework
+pytest>=7.0.0
+pytest-cov>=3.0.0
+pytest-xdist>=2.5.0
+pytest-mock>=3.7.0
+pytest-asyncio>=0.18.0
+hypothesis>=6.50.0
+factory-boy>=3.2.0
+
+# Development tools
+pre-commit>=2.17.0
+tox>=3.24.0
+nox>=2022.1.7
+pip-tools>=6.5.0
+
+# Documentation
+sphinx>=4.5.0
+sphinx-rtd-theme>=1.0.0
+myst-parser>=0.17.0
+sphinx-autodoc-typehints>=1.17.0
+sphinx-click>=4.0.0
+
+# Jupyter and notebooks
+jupyter>=1.0.0
+ipython>=8.0.0
+notebook>=6.4.0
+
+# Performance profiling and benchmarking
+py-spy>=0.3.0
+memory-profiler>=0.60.0
+line-profiler>=3.5.0
+pytest-benchmark>=3.4.0
+
+# Build and packaging
+build>=0.7.0
+twine>=4.0.0
+wheel>=0.37.0
+
+# Type checking and stubs
+types-requests>=2.25.0
+types-PyYAML>=6.0.0
+types-setuptools>=57.0.0
+
+# Coverage reporting
+coverage[toml]>=6.3.0
+
+# Git hooks and workflow
+gitpython>=3.1.0
+commitizen>=2.20.0
+
+# Hardware simulation for testing
+pyfakefs>=4.5.0

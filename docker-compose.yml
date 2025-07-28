@@ -1,0 +1,273 @@
+version: '3.8'
+
+# Docker Compose configuration for Tiny LLM Edge Profiler
+# Supports development, testing, and production environments
+
+services:
+  # =============================================================================
+  # Development Environment
+  # =============================================================================
+  profiler-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+      args:
+        BUILD_TARGET: development
+    container_name: tiny-llm-profiler-dev
+    image: tiny-llm-profiler:dev
+    volumes:
+      # Source code (for live editing)
+      - .:/workspace:cached
+      # Preserve Python packages
+      - profiler-venv:/usr/local/lib/python3.11/dist-packages
+      # Device access
+      - /dev:/dev:shared
+      - /var/run/udev:/var/run/udev:ro
+      # Data persistence
+      - profiler-data:/workspace/data
+      - profiler-results:/workspace/results
+      - profiler-models:/workspace/models
+    environment:
+      - PYTHONPATH=/workspace/src
+      - DEBUG=true
+      - LOG_LEVEL=DEBUG
+      - MOCK_HARDWARE=false
+    privileged: true  # Required for device access
+    devices:
+      - /dev/bus/usb:/dev/bus/usb  # USB device access
+    ports:
+      - "8000:8000"  # Development server
+      - "8080:8080"  # Alternative port
+      - "5000:5000"  # Flask debug server
+    working_dir: /workspace
+    tty: true
+    stdin_open: true
+    restart: unless-stopped
+    profiles:
+      - dev
+      - development
+
+  # =============================================================================
+  # Production Environment
+  # =============================================================================
+  profiler-prod:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+      args:
+        BUILD_TARGET: production
+    container_name: tiny-llm-profiler-prod
+    image: tiny-llm-profiler:latest
+    volumes:
+      # Data persistence only
+      - profiler-data:/app/data
+      - profiler-results:/app/results
+      - profiler-logs:/app/logs
+      # Device access
+      - /dev:/dev:shared
+      - /var/run/udev:/var/run/udev:ro
+    environment:
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
+      - LOG_LEVEL=INFO
+      - MOCK_HARDWARE=false
+      - RESULTS_OUTPUT_DIR=/app/results
+      - MODEL_CACHE_DIR=/app/data/models
+    privileged: true  # Required for device access
+    devices:
+      - /dev/bus/usb:/dev/bus/usb
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+    profiles:
+      - prod
+      - production
+
+  # =============================================================================
+  # CI/CD Environment
+  # =============================================================================
+  profiler-ci:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: ci
+      args:
+        BUILD_TARGET: ci
+    container_name: tiny-llm-profiler-ci
+    image: tiny-llm-profiler:ci
+    volumes:
+      - .:/workspace:ro
+      - profiler-ci-reports:/workspace/reports
+    environment:
+      - CI=true
+      - MOCK_HARDWARE=true
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
+    working_dir: /workspace
+    profiles:
+      - ci
+      - test
+
+  # =============================================================================
+  # Documentation Server
+  # =============================================================================
+  profiler-docs:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: tiny-llm-profiler-docs
+    image: tiny-llm-profiler:dev
+    volumes:
+      - .:/workspace:cached
+      - profiler-docs:/workspace/docs/_build
+    environment:
+      - PYTHONPATH=/workspace/src
+    ports:
+      - "8080:8080"
+    working_dir: /workspace
+    command: >
+      bash -c "
+        cd docs &&
+        make html &&
+        cd _build/html &&
+        python -m http.server 8080
+      "
+    profiles:
+      - docs
+
+  # =============================================================================
+  # Jupyter Notebook Server
+  # =============================================================================
+  profiler-jupyter:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: tiny-llm-profiler-jupyter
+    image: tiny-llm-profiler:dev
+    volumes:
+      - .:/workspace:cached
+      - profiler-notebooks:/workspace/notebooks
+    environment:
+      - PYTHONPATH=/workspace/src
+      - JUPYTER_ENABLE_LAB=yes
+    ports:
+      - "8888:8888"
+    working_dir: /workspace
+    command: >
+      bash -c "
+        pip install jupyterlab &&
+        jupyter lab --ip=0.0.0.0 --port=8888 --no-browser --allow-root --NotebookApp.token=''
+      "
+    profiles:
+      - jupyter
+      - notebooks
+
+  # =============================================================================
+  # Model Repository Service
+  # =============================================================================
+  model-repository:
+    image: nginx:alpine
+    container_name: tiny-llm-model-repo
+    volumes:
+      - profiler-models:/usr/share/nginx/html/models:ro
+      - ./docker/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    ports:
+      - "9000:80"
+    restart: unless-stopped
+    profiles:
+      - repo
+      - models
+
+  # =============================================================================
+  # Monitoring Stack
+  # =============================================================================
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: tiny-llm-prometheus
+    volumes:
+      - ./docker/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - profiler-prometheus:/prometheus
+    ports:
+      - "9090:9090"
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=30d'
+      - '--web.enable-lifecycle'
+    restart: unless-stopped
+    profiles:
+      - monitoring
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: tiny-llm-grafana
+    volumes:
+      - profiler-grafana:/var/lib/grafana
+      - ./docker/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./docker/grafana/datasources:/etc/grafana/provisioning/datasources:ro
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+    profiles:
+      - monitoring
+
+  # =============================================================================
+  # Redis Cache (for distributed profiling)
+  # =============================================================================
+  redis:
+    image: redis:7-alpine
+    container_name: tiny-llm-redis
+    volumes:
+      - profiler-redis:/data
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+    profiles:
+      - distributed
+      - cache
+
+# =============================================================================
+# Named Volumes
+# =============================================================================
+volumes:
+  profiler-venv:
+    driver: local
+  profiler-data:
+    driver: local
+  profiler-results:
+    driver: local
+  profiler-models:
+    driver: local
+  profiler-logs:
+    driver: local
+  profiler-ci-reports:
+    driver: local
+  profiler-docs:
+    driver: local
+  profiler-notebooks:
+    driver: local
+  profiler-prometheus:
+    driver: local
+  profiler-grafana:
+    driver: local
+  profiler-redis:
+    driver: local
+
+# =============================================================================
+# Networks
+# =============================================================================
+networks:
+  default:
+    name: tiny-llm-profiler
+    driver: bridge
