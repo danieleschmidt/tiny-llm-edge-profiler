@@ -1,0 +1,131 @@
+# Docker Compose for tiny-llm-edge-profiler development environment
+version: '3.8'
+
+services:
+  # Development environment
+  dev:
+    build:
+      context: .
+      target: development
+    volumes:
+      - .:/app
+      - pip-cache:/home/profiler/.cache/pip
+    environment:
+      - PYTHONPATH=/app/src
+      - PROFILER_CONFIG_DIR=/app/config
+    working_dir: /app
+    stdin_open: true
+    tty: true
+    command: bash
+
+  # Testing environment
+  test:
+    build:
+      context: .
+      target: testing
+    volumes:
+      - .:/app
+      - test-reports:/app/reports
+    environment:
+      - PYTHONPATH=/app/src
+      - PYTEST_CACHE_DIR=/app/.pytest_cache
+    command: >
+      sh -c "
+        pytest tests/unit/ tests/integration/ -v 
+        --cov=src/tiny_llm_profiler 
+        --cov-report=html:/app/reports/coverage 
+        --cov-report=xml:/app/reports/coverage.xml
+        --junit-xml=/app/reports/junit.xml
+      "
+
+  # Hardware testing (requires privileged mode and device access)
+  hardware-test:
+    build:
+      context: .
+      target: hardware
+    privileged: true
+    volumes:
+      - .:/app
+      - /dev:/dev
+      - hardware-reports:/app/reports
+    environment:
+      - PYTHONPATH=/app/src
+      - HARDWARE_TEST_MODE=1
+    command: >
+      sh -c "
+        echo 'Checking for hardware devices...' &&
+        ls -la /dev/tty* || true &&
+        pytest tests/hardware/ -v --hardware 
+        --junit-xml=/app/reports/hardware-junit.xml
+      "
+
+  # Documentation server
+  docs:
+    build:
+      context: .
+      target: docs
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+    environment:
+      - PYTHONPATH=/app/src
+    command: mkdocs serve --dev-addr=0.0.0.0:8000
+
+  # Production simulation
+  prod:
+    build:
+      context: .
+      target: production
+    environment:
+      - PROFILER_LOG_LEVEL=INFO
+    command: tiny-profiler --version
+
+  # Code quality checks
+  quality:
+    build:
+      context: .
+      target: development
+    volumes:
+      - .:/app
+      - quality-reports:/app/reports
+    command: >
+      sh -c "
+        echo 'Running code quality checks...' &&
+        mkdir -p /app/reports &&
+        black --check --diff src/ tests/ > /app/reports/black.txt || true &&
+        flake8 src/ tests/ --output-file=/app/reports/flake8.txt || true &&
+        mypy src/ > /app/reports/mypy.txt || true &&
+        bandit -r src/ -f json -o /app/reports/bandit.json || true &&
+        safety check --json --output /app/reports/safety.json || true &&
+        echo 'Quality checks completed. See reports/ directory.'
+      "
+
+  # Performance benchmarks
+  benchmark:
+    build:
+      context: .
+      target: testing
+    volumes:
+      - .:/app
+      - benchmark-reports:/app/reports
+    environment:
+      - PYTHONPATH=/app/src
+    command: >
+      sh -c "
+        pytest tests/performance/ -v 
+        --benchmark-only 
+        --benchmark-json=/app/reports/benchmark.json
+      "
+
+volumes:
+  pip-cache:
+  test-reports:
+  hardware-reports:
+  quality-reports:
+  benchmark-reports:
+
+# Network for inter-service communication (if needed)
+networks:
+  default:
+    name: profiler-network

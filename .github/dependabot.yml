@@ -1,0 +1,89 @@
+version: 2
+updates:
+  # Python dependencies
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "terragon-security-team"
+    assignees:
+      - "terragon-security-team"
+    commit-message:
+      prefix: "deps"
+      prefix-development: "deps-dev"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "security"
+    
+    # Group related updates
+    groups:
+      testing-dependencies:
+        patterns:
+          - "pytest*"
+          - "coverage*"
+          - "factory-boy"
+          - "faker"
+      
+      security-dependencies:
+        patterns:
+          - "cryptography*"
+          - "pycryptodome*"
+          - "pyopenssl*"
+          - "requests*"
+          - "urllib3*"
+      
+      development-tools:
+        patterns:
+          - "black"
+          - "flake8*"
+          - "mypy*"
+          - "ruff"
+          - "pre-commit"
+    
+    # Ignore specific updates that require manual testing
+    ignore:
+      - dependency-name: "numpy"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "pandas"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "plotly"
+        update-types: ["version-update:semver-major"]
+
+  # GitHub Actions dependencies
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "10:00"
+    open-pull-requests-limit: 3
+    reviewers:
+      - "terragon-devops-team"
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+    labels:
+      - "github-actions"
+      - "infrastructure"
+
+  # Docker dependencies (if Dockerfile is added)
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "tuesday"
+      time: "09:00"
+    open-pull-requests-limit: 2
+    reviewers:
+      - "terragon-devops-team"
+    commit-message:
+      prefix: "docker"
+      include: "scope"
+    labels:
+      - "docker"
+      - "infrastructure"
