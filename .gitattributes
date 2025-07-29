@@ -1,0 +1,194 @@
+# Git attributes for tiny-llm-edge-profiler
+# Ensures consistent line endings and proper file handling across platforms
+
+# Set default behavior for files not explicitly configured
+* text=auto eol=lf
+
+# Source code files
+*.py text diff=python
+*.pyx text diff=python
+*.pyi text diff=python
+*.pyw text diff=python
+
+# Configuration files
+*.toml text
+*.ini text
+*.cfg text
+*.conf text
+*.yaml text
+*.yml text
+*.json text
+
+# Documentation files
+*.md text diff=markdown
+*.rst text
+*.txt text
+*.adoc text
+
+# Web assets (if any)
+*.html text diff=html
+*.css text diff=css
+*.js text
+*.xml text
+*.svg text
+
+# Shell scripts and batch files
+*.sh text eol=lf
+*.bash text eol=lf
+*.zsh text eol=lf
+*.fish text eol=lf
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# Makefiles and build files
+Makefile text
+makefile text
+*.mk text
+*.make text
+CMakeLists.txt text
+*.cmake text
+*.dockerfile text
+Dockerfile* text
+
+# C/C++ files for embedded firmware
+*.c text diff=cpp
+*.cc text diff=cpp
+*.cxx text diff=cpp
+*.cpp text diff=cpp
+*.c++ text diff=cpp
+*.hpp text diff=cpp
+*.h text diff=cpp
+*.h++ text diff=cpp
+*.hh text diff=cpp
+*.hxx text diff=cpp
+*.inc text diff=cpp
+*.inl text diff=cpp
+
+# Assembly and linker files
+*.s text
+*.S text
+*.asm text
+*.ASM text
+*.ld text
+*.lds text
+
+# Git files
+.gitattributes text
+.gitignore text
+.gitmodules text
+
+# Documentation generation
+*.in text
+*.ac text
+*.am text
+
+# Binary files - ensure they remain binary
+*.bin binary
+*.hex binary
+*.elf binary
+*.o binary
+*.obj binary
+*.so binary
+*.dll binary
+*.dylib binary
+*.a binary
+*.lib binary
+*.exe binary
+
+# Firmware and bootloader files
+*.uf2 binary
+*.dfu binary
+*.img binary
+
+# Images and media (binary)
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.bmp binary
+*.tiff binary
+*.svg text
+
+# Archives and compressed files
+*.zip binary
+*.tar binary
+*.gz binary
+*.bz2 binary
+*.xz binary
+*.7z binary
+*.rar binary
+
+# Python compiled files
+*.pyc binary
+*.pyo binary
+*.pyd binary
+*.egg binary
+*.whl binary
+
+# Data files that should be treated as binary
+*.pkl binary
+*.pickle binary
+*.db binary
+*.sqlite binary
+*.sqlite3 binary
+*.msgpack binary
+
+# Special handling for large files
+*.pdf binary diff=astextplain
+*.doc binary diff=astextplain
+*.docx binary diff=astextplain
+*.xls binary diff=astextplain
+*.xlsx binary diff=astextplain
+*.ppt binary diff=astextplain
+*.pptx binary diff=astextplain
+
+# Font files
+*.ttf binary
+*.otf binary
+*.woff binary
+*.woff2 binary
+*.eot binary
+
+# Jupyter notebooks - treat as text but with special handling
+*.ipynb text
+
+# Template files
+*.j2 text
+*.jinja text
+*.template text
+
+# Lock files - should not be modified manually
+poetry.lock linguist-generated=true
+Pipfile.lock linguist-generated=true
+package-lock.json linguist-generated=true
+yarn.lock linguist-generated=true
+
+# Generated files - mark as generated for GitHub
+docs/_build/* linguist-generated=true
+*.egg-info/* linguist-generated=true
+build/* linguist-generated=true
+dist/* linguist-generated=true
+htmlcov/* linguist-generated=true
+.coverage linguist-generated=true
+
+# Exclude specific directories from GitHub language statistics
+firmware/* linguist-vendored=true
+vendor/* linguist-vendored=true
+third_party/* linguist-vendored=true
+
+# Export ignore for release archives
+.github/ export-ignore
+.vscode/ export-ignore
+.idea/ export-ignore
+tests/ export-ignore
+docs/ export-ignore
+*.md export-ignore
+.gitignore export-ignore
+.gitattributes export-ignore
+.pre-commit-config.yaml export-ignore
+tox.ini export-ignore
+pytest.ini export-ignore
+.coverage export-ignore
+htmlcov/ export-ignore
