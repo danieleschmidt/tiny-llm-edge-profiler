@@ -84,8 +84,13 @@ docs = [
     "mkdocs-mermaid2-plugin>=1.0.0",
     "mkdocstrings[python]>=0.23.0",
 ]
+sbom = [
+    "cyclonedx-bom>=4.0.0",
+    "pip-audit>=2.6.0",
+    "safety>=2.3.0",
+]
 all = [
-    "tiny-llm-edge-profiler[dev,test,hardware,docs]"
+    "tiny-llm-edge-profiler[dev,test,hardware,docs,sbom]"
 ]
 
 [project.urls]
@@ -245,3 +250,11 @@ exclude_lines = [
     "class .*\\bProtocol\\):",
     "@(abc\\.)?abstractmethod",
 ]
+
+# Bandit security configuration
+[tool.bandit]
+exclude_dirs = ["tests", "build", "dist"]
+skips = ["B101", "B601"]
+
+[tool.bandit.assert_used]
+skips = ["*/tests/*"]

@@ -1,0 +1,46 @@
+# Global owners for repository-wide changes
+* @terragon-labs/core-team
+
+# Source code ownership
+/src/ @terragon-labs/core-team @terragon-labs/python-team
+
+# Test ownership
+/tests/ @terragon-labs/core-team @terragon-labs/qa-team
+
+# Hardware integration tests
+/tests/hardware/ @terragon-labs/hardware-team @terragon-labs/embedded-team
+
+# Documentation
+/docs/ @terragon-labs/docs-team @terragon-labs/core-team
+*.md @terragon-labs/docs-team
+/README.md @terragon-labs/core-team @terragon-labs/docs-team
+
+# Configuration files
+/pyproject.toml @terragon-labs/core-team @terragon-labs/devops-team
+/requirements*.txt @terragon-labs/core-team @terragon-labs/security-team
+/.pre-commit-config.yaml @terragon-labs/devops-team
+/docker-compose.yml @terragon-labs/devops-team @terragon-labs/embedded-team
+/Dockerfile @terragon-labs/devops-team @terragon-labs/embedded-team
+
+# Security-related files
+/SECURITY.md @terragon-labs/security-team @terragon-labs/core-team
+/.github/dependabot.yml @terragon-labs/security-team @terragon-labs/devops-team
+
+# Build and CI/CD
+/Makefile @terragon-labs/devops-team @terragon-labs/core-team
+/.github/ @terragon-labs/devops-team
+/.github/workflows/ @terragon-labs/devops-team @terragon-labs/core-team
+
+# Embedded device configurations
+/docker/99-embedded-devices.rules @terragon-labs/embedded-team @terragon-labs/hardware-team
+
+# Architecture and design decisions
+/ARCHITECTURE.md @terragon-labs/architecture-team @terragon-labs/core-team
+/docs/adr/ @terragon-labs/architecture-team @terragon-labs/core-team
+
+# Release and versioning
+/CHANGELOG.md @terragon-labs/core-team @terragon-labs/release-team
+/PROJECT_CHARTER.md @terragon-labs/product-team @terragon-labs/core-team
+
+# Package manifest and metadata
+/LICENSE @terragon-labs/legal-team @terragon-labs/core-team
