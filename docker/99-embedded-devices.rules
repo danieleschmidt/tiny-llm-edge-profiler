@@ -1,0 +1,28 @@
+# udev rules for embedded development boards
+# Copy to /etc/udev/rules.d/ and run: sudo udevadm control --reload
+
+# ESP32 development boards
+SUBSYSTEM=="tty", ATTRS{idVendor}=="10c4", ATTRS{idProduct}=="ea60", SYMLINK+="esp32_%n", GROUP="dialout", MODE="0666"
+SUBSYSTEM=="tty", ATTRS{idVendor}=="1a86", ATTRS{idProduct}=="7523", SYMLINK+="esp32_ch340_%n", GROUP="dialout", MODE="0666"
+
+# STM32 development boards
+SUBSYSTEM=="tty", ATTRS{idVendor}=="0483", ATTRS{idProduct}=="5740", SYMLINK+="stm32_%n", GROUP="dialout", MODE="0666"
+SUBSYSTEM=="tty", ATTRS{idVendor}=="0483", ATTRS{idProduct}=="374b", SYMLINK+="stm32_nucleo_%n", GROUP="dialout", MODE="0666"
+
+# Raspberry Pi Pico (RP2040)
+SUBSYSTEM=="tty", ATTRS{idVendor}=="2e8a", ATTRS{idProduct}=="0005", SYMLINK+="rp2040_%n", GROUP="dialout", MODE="0666"
+
+# Nordic nRF52 boards
+SUBSYSTEM=="tty", ATTRS{idVendor}=="1915", ATTRS{idProduct}=="521f", SYMLINK+="nrf52_%n", GROUP="dialout", MODE="0666"
+
+# Arduino boards (various)
+SUBSYSTEM=="tty", ATTRS{idVendor}=="2341", ATTRS{idProduct}=="0043", SYMLINK+="arduino_uno_%n", GROUP="dialout", MODE="0666"
+SUBSYSTEM=="tty", ATTRS{idVendor}=="2341", ATTRS{idProduct}=="8036", SYMLINK+="arduino_leonardo_%n", GROUP="dialout", MODE="0666"
+
+# FTDI-based devices
+SUBSYSTEM=="tty", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6001", SYMLINK+="ftdi_%n", GROUP="dialout", MODE="0666"
+SUBSYSTEM=="tty", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6014", SYMLINK+="ftdi_x_%n", GROUP="dialout", MODE="0666"
+
+# Generic USB-to-Serial adapters
+SUBSYSTEM=="tty", ATTRS{idVendor}=="067b", ATTRS{idProduct}=="2303", SYMLINK+="pl2303_%n", GROUP="dialout", MODE="0666"
+SUBSYSTEM=="tty", ATTRS{idVendor}=="1a86", ATTRS{idProduct}=="7523", SYMLINK+="ch340_%n", GROUP="dialout", MODE="0666">
