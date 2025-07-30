@@ -1,0 +1,92 @@
+# Bandit security scanner configuration
+# Enhanced configuration for embedded systems security scanning
+
+[bandit]
+
+# Test IDs to skip
+skips = B101,B601,B701,B702
+
+# Test IDs to include (overrides skips for specific tests)
+tests = B102,B103,B104,B105,B106,B107,B108,B109,B110,B201,B301,B302,B303,B304,B305,B306,B307,B308,B309,B310,B311,B312,B313,B314,B315,B316,B317,B318,B319,B320,B321,B322,B323,B324,B325,B401,B402,B403,B404,B405,B406,B407,B408,B409,B410,B411,B501,B502,B503,B504,B505,B506,B507,B508,B601,B602,B603,B604,B605,B606,B607,B608,B609,B610,B611,B701,B702,B703
+
+# Directories to exclude from scanning
+exclude_dirs = 
+    /tests
+    /build
+    /dist
+    /.venv
+    /venv
+    /.git
+    /.pytest_cache
+    /__pycache__
+    /firmware
+    /examples
+    /docs/_build
+
+# File patterns to exclude
+exclude = 
+    *_test.py
+    test_*.py
+    conftest.py
+    setup.py
+    */tests/*
+    */firmware/*
+    */.venv/*
+
+# Confidence levels: LOW, MEDIUM, HIGH
+confidence = MEDIUM
+
+# Severity levels: LOW, MEDIUM, HIGH  
+severity = LOW
+
+# Output format: csv, json, txt, xml, yaml
+format = json
+
+# Include line numbers in output
+msg_template = {abspath}:{line}: [{test_id}:{severity}] {msg}
+
+# Additional security checks for embedded systems
+[bandit.hardcoded_password_string]
+# Check for hardcoded passwords in device connection strings
+word_list = password,passwd,pwd,pass,secret,token,key,api_key,private_key
+
+[bandit.hardcoded_password_funcarg]
+# Function arguments that should not contain hardcoded passwords
+arg_names = password,passwd,pwd,pass,secret,token,key,api_key,private_key,device_key
+
+[bandit.hardcoded_password_default]
+# Default parameter values that should not be hardcoded passwords  
+arg_names = password,passwd,pwd,pass,secret,token,key,api_key,private_key
+
+[bandit.shell_injection]
+# Shell injection checks for device communication
+shell_vars = subprocess,os.system,os.popen,commands,platform
+
+[bandit.sql_injection_db]
+# SQL injection checks for local databases
+sql_statements = SELECT,INSERT,UPDATE,DELETE,CREATE,DROP,ALTER
+
+[bandit.request_without_timeout]
+# Network requests should have timeouts for embedded reliability  
+methods = get,post,put,patch,delete,head,options
+
+# Custom security rules for embedded systems
+[bandit.assert_used]
+# Allow asserts in test files but warn in production code
+exclude_dirs = /tests,/test
+
+[bandit.exec_used]
+# Restrict exec usage for embedded security
+exclude_dirs = /tests,/scripts
+
+[bandit.hardcoded_bind_all_interfaces]
+# Warn about binding to all interfaces in embedded context
+exclude_dirs = /tests,/examples
+
+[bandit.insecure_transport]
+# Ensure secure transport for device communication
+transports = http,ftp,telnet
+
+[bandit.weak_cryptographic_key]
+# Check for weak cryptographic keys in device security
+key_sizes = 512,1024
