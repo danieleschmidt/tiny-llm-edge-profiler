@@ -20,14 +20,29 @@ updates:
       - "dependencies"
       - "security"
     
-    # Group related updates
+    # Advanced grouping for intelligent dependency management
     groups:
-      testing-dependencies:
+      core-runtime:
+        patterns:
+          - "numpy*"
+          - "pandas*"
+          - "pyserial*"
+          - "pydantic*"
+          - "asyncio-mqtt*"
+        update-types:
+          - "minor"
+          - "patch"
+      
+      testing-framework:
         patterns:
           - "pytest*"
           - "coverage*"
-          - "factory-boy"
-          - "faker"
+          - "factory-boy*"
+          - "faker*"
+          - "pytest-asyncio*"
+          - "pytest-cov*"
+          - "pytest-mock*"
+          - "pytest-timeout*"
       
       security-dependencies:
         patterns:
@@ -36,14 +51,43 @@ updates:
           - "pyopenssl*"
           - "requests*"
           - "urllib3*"
+          - "httpx*"
+        # Security updates get highest priority
+        dependency-type: "production"
       
       development-tools:
         patterns:
-          - "black"
+          - "black*"
           - "flake8*"
           - "mypy*"
-          - "ruff"
-          - "pre-commit"
+          - "ruff*"
+          - "pre-commit*"
+        dependency-type: "development"
+      
+      hardware-drivers:
+        patterns:
+          - "pyftdi*"
+          - "adafruit-*"
+          - "RPi.GPIO*"
+        update-types:
+          - "patch"  # Hardware drivers need careful testing
+      
+      ai-ml-stack:
+        patterns:
+          - "torch*"
+          - "transformers*"
+          - "onnx*"
+          - "tensorrt*"
+        # AI/ML updates require extensive validation
+        update-types:
+          - "patch"
+      
+      sbom-security-tools:
+        patterns:
+          - "cyclonedx-*"
+          - "pip-audit*"
+          - "safety*"
+          - "bandit*"
     
     # Ignore specific updates that require manual testing
     ignore:

@@ -1,0 +1,272 @@
+{
+  // Python interpreter and environment
+  "python.defaultInterpreterPath": "./venv/bin/python",
+  "python.terminal.activateEnvironment": true,
+  "python.envFile": "${workspaceFolder}/.env",
+  
+  // Code formatting and linting
+  "python.formatting.provider": "none",
+  "[python]": {
+    "editor.defaultFormatter": "ms-python.black-formatter",
+    "editor.formatOnSave": true,
+    "editor.formatOnType": false,
+    "editor.codeActionsOnSave": {
+      "source.organizeImports": "explicit",
+      "source.fixAll.ruff": "explicit"
+    },
+    "editor.rulers": [88],
+    "editor.tabSize": 4,
+    "editor.insertSpaces": true
+  },
+  
+  // Black formatter settings
+  "black-formatter.args": [
+    "--line-length=88"
+  ],
+  
+  // Ruff linter settings (primary linter)
+  "ruff.args": [
+    "--config=${workspaceFolder}/.ruff.toml"
+  ],
+  "ruff.fixAll": true,
+  "ruff.organizeImports": true,
+  
+  // MyPy type checking
+  "mypy-type-checker.args": [
+    "--config-file=${workspaceFolder}/pyproject.toml"
+  ],
+  
+  // Pylance (language server) settings
+  "python.analysis.typeCheckingMode": "strict",
+  "python.analysis.autoImportCompletions": true,
+  "python.analysis.autoFormatStrings": true,
+  "python.analysis.completeFunctionParens": true,
+  "python.analysis.diagnosticMode": "workspace",
+  "python.analysis.stubPath": "./typings",
+  "python.analysis.extraPaths": [
+    "./src"
+  ],
+  
+  // Testing configuration
+  "python.testing.unittestEnabled": false,
+  "python.testing.pytestEnabled": true,
+  "python.testing.pytestArgs": [
+    "tests",
+    "--verbose",
+    "--tb=short"
+  ],
+  "python.testing.autoTestDiscoverOnSaveEnabled": true,
+  
+  // Debugging configuration
+  "python.debug.consolePath": "${workspaceFolder}/debug_console.py",
+  
+  // File associations and exclusions
+  "files.exclude": {
+    "**/__pycache__": true,
+    "**/*.pyc": true,
+    "**/*.pyo": true,
+    "**/*.egg-info": true,
+    "**/build": true,
+    "**/dist": true,
+    "**/.pytest_cache": true,
+    "**/.mypy_cache": true,
+    "**/.ruff_cache": true,
+    "**/.coverage": true,
+    "**/htmlcov": true,
+    "**/.tox": true,
+    "**/.nox": true,
+    "**/venv": true,
+    "**/.venv": true,
+    "**/.DS_Store": true
+  },
+  
+  "files.watcherExclude": {
+    "**/__pycache__/**": true,
+    "**/build/**": true,
+    "**/dist/**": true,
+    "**/.pytest_cache/**": true,
+    "**/.mypy_cache/**": true,
+    "**/.ruff_cache/**": true,
+    "**/htmlcov/**": true,
+    "**/venv/**": true,
+    "**/.venv/**": true
+  },
+  
+  // Search configuration
+  "search.exclude": {
+    "**/__pycache__": true,
+    "**/build": true,
+    "**/dist": true,
+    "**/.pytest_cache": true,
+    "**/.mypy_cache": true,
+    "**/.ruff_cache": true,
+    "**/htmlcov": true,
+    "**/venv": true,
+    "**/.venv": true,
+    "**/*.egg-info": true
+  },
+  
+  // Git and version control
+  "git.ignoreLimitWarning": true,
+  "git.autofetch": true,
+  "git.enableSmartCommit": true,
+  "git.confirmSync": false,
+  
+  // Editor settings
+  "editor.rulers": [88],
+  "editor.renderWhitespace": "boundary",
+  "editor.trimAutoWhitespace": true,
+  "editor.insertFinalNewline": true,
+  "editor.trimFinalNewlines": true,
+  
+  // Markdown settings
+  "[markdown]": {
+    "editor.wordWrap": "on",
+    "editor.rulers": [80],
+    "editor.defaultFormatter": "yzhang.markdown-all-in-one"
+  },
+  
+  // YAML settings
+  "[yaml]": {
+    "editor.defaultFormatter": "redhat.vscode-yaml",
+    "editor.tabSize": 2,
+    "editor.insertSpaces": true
+  },
+  
+  // TOML settings
+  "[toml]": {
+    "editor.defaultFormatter": "tamasfe.even-better-toml",
+    "editor.tabSize": 2,
+    "editor.insertSpaces": true
+  },
+  
+  // JSON settings
+  "[json]": {
+    "editor.defaultFormatter": "ms-vscode.vscode-json",
+    "editor.tabSize": 2,
+    "editor.insertSpaces": true
+  },
+  
+  "[jsonc]": {
+    "editor.defaultFormatter": "ms-vscode.vscode-json",
+    "editor.tabSize": 2,
+    "editor.insertSpaces": true
+  },
+  
+  // Dockerfile settings
+  "[dockerfile]": {
+    "editor.defaultFormatter": "ms-azuretools.vscode-docker"
+  },
+  
+  // Shell script settings
+  "[shellscript]": {
+    "editor.defaultFormatter": "foxundermoon.shell-format",
+    "editor.tabSize": 2,
+    "editor.insertSpaces": true
+  },
+  
+  // Terminal settings
+  "terminal.integrated.defaultProfile.linux": "bash",
+  "terminal.integrated.scrollback": 10000,
+  
+  // Coverage gutters
+  "coverage-gutters.coverageFileNames": [
+    "coverage.xml",
+    "coverage.lcov",
+    "cov.xml",
+    "coverage.json"
+  ],
+  "coverage-gutters.showLineCoverage": true,
+  "coverage-gutters.showRulerCoverage": true,
+  
+  // Todo Tree
+  "todo-tree.general.tags": [
+    "TODO",
+    "FIXME", 
+    "BUG",
+    "HACK",
+    "NOTE",
+    "INFO",
+    "OPTIMIZE",
+    "SECURITY",
+    "PERFORMANCE"
+  ],
+  "todo-tree.regex.regex": "(//|#|<!--|;|/\\*|^|^\\s*(-|\\+|\\*))\\s*($TAGS)",
+  
+  // GitHub Copilot
+  "github.copilot.enable": {
+    "*": true,
+    "yaml": true,
+    "plaintext": false,
+    "markdown": true,
+    "python": true
+  },
+  
+  // Error Lens
+  "errorLens.enabledDiagnosticLevels": [
+    "error",
+    "warning",
+    "info"
+  ],
+  "errorLens.exclude": [
+    "black",
+    "flake8"
+  ],
+  
+  // Spell checker
+  "cSpell.words": [
+    "terragon",
+    "asyncio",
+    "pyproject",
+    "pytest",
+    "riscv",
+    "cortex",
+    "xtensa",
+    "profiler",
+    "quantized",
+    "microcontroller",
+    "embedded",
+    "tinyml",
+    "onnx",
+    "tensorrt",
+    "esp32",
+    "stm32",
+    "nrf52",
+    "rp2040",
+    "pyftdi",
+    "adafruit",
+    "circuitpython",
+    "psutil",
+    "aiofiles",
+    "httpx",
+    "pydantic",
+    "plotly",
+    "mkdocs",
+    "cyclonedx",
+    "sbom",
+    "slsa"
+  ],
+  
+  // Workspace trust
+  "security.workspace.trust.untrustedFiles": "open",
+  
+  // Performance settings
+  "python.analysis.packageIndexDepths": [
+    { "name": "sklearn", "depth": 2 },
+    { "name": "matplotlib", "depth": 2 },
+    { "name": "scipy", "depth": 2 },
+    { "name": "numpy", "depth": 3 },
+    { "name": "pandas", "depth": 2 }
+  ],
+  
+  // Extension-specific settings
+  "jupyter.askForKernelRestart": false,
+  "jupyter.interactiveWindow.textEditor.executeSelection": true,
+  
+  // Makefile support
+  "makefile.extensionOutputFolder": "./.vscode",
+  
+  // Docker settings
+  "docker.showStartPage": false,
+  "docker.defaultRegistryPath": "terragon-labs"
+}

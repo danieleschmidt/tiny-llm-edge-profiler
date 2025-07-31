@@ -1,0 +1,257 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Python: Current File",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${file}",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/src"
+      },
+      "justMyCode": false
+    },
+    
+    {
+      "name": "Python: Edge Profiler CLI",
+      "type": "debugpy", 
+      "request": "launch",
+      "module": "tiny_llm_profiler.cli",
+      "args": [
+        "profile",
+        "--platform", "esp32",
+        "--device", "/dev/ttyUSB0",
+        "--model", "examples/models/tinyllama-2bit.bin"
+      ],
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/src"
+      },
+      "justMyCode": false
+    },
+    
+    {
+      "name": "Python: Hardware Profiling Session",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/examples/profile_hardware.py",
+      "args": [
+        "--platform", "esp32",
+        "--model", "tinyllama-2bit"
+      ],
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/src",
+        "PROFILER_DEBUG": "1"
+      },
+      "justMyCode": false
+    },
+    
+    {
+      "name": "Python: Run Unit Tests",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "tests/unit/",
+        "-v",
+        "--tb=short"
+      ],
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/src"
+      },
+      "justMyCode": false
+    },
+    
+    {
+      "name": "Python: Run Integration Tests", 
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "tests/integration/",
+        "-v",
+        "--tb=short",
+        "-s"
+      ],
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/src"
+      },
+      "justMyCode": false
+    },
+    
+    {
+      "name": "Python: Debug Hardware Test",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "tests/hardware/test_esp32_integration.py::test_esp32_profiling",
+        "-v",
+        "--tb=long",
+        "-s"
+      ],
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/src",
+        "PROFILER_DEBUG": "1",
+        "HARDWARE_TEST_DEVICE": "/dev/ttyUSB0"
+      },
+      "justMyCode": false
+    },
+    
+    {
+      "name": "Python: Power Profiling",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/examples/power_profiling.py",
+      "args": [
+        "--sensor", "ina219",
+        "--duration", "60",
+        "--sample-rate", "1000"
+      ],
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/src"
+      },
+      "justMyCode": false
+    },
+    
+    {
+      "name": "Python: Benchmark Suite",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/examples/run_benchmarks.py",
+      "args": [
+        "--platforms", "esp32,stm32f7",
+        "--models", "tinyllama-2bit,phi-2-4bit",
+        "--output", "benchmark_results.json"
+      ],
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/src"
+      },
+      "justMyCode": false
+    },
+    
+    {
+      "name": "Python: Model Quantization",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/examples/quantize_model.py",
+      "args": [
+        "--model", "llama-2-7b",
+        "--bits", "2",
+        "--platform", "esp32",
+        "--output", "tinyllama-2bit-esp32.bin"
+      ],
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/src"
+      },
+      "justMyCode": false
+    },
+    
+    {
+      "name": "Python: Memory Optimization",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/examples/optimize_memory.py",
+      "args": [
+        "--model", "tinyllama-2bit.bin",
+        "--platform", "esp32",
+        "--ram-limit", "400"
+      ],
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/src"
+      },
+      "justMyCode": false
+    },
+    
+    {
+      "name": "Python: Attach to Process",
+      "type": "debugpy",
+      "request": "attach",
+      "connect": {
+        "host": "localhost",
+        "port": 5678
+      },
+      "pathMappings": [
+        {
+          "localRoot": "${workspaceFolder}",
+          "remoteRoot": "/workspace"
+        }
+      ],
+      "justMyCode": false
+    },
+    
+    {
+      "name": "Python: Remote Hardware Debug",
+      "type": "debugpy",
+      "request": "attach",
+      "connect": {
+        "host": "192.168.1.100",
+        "port": 5678
+      },
+      "pathMappings": [
+        {
+          "localRoot": "${workspaceFolder}",
+          "remoteRoot": "/home/pi/tiny-llm-profiler"
+        }
+      ],
+      "justMyCode": false
+    },
+    
+    {
+      "name": "Python: SBOM Generation",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/scripts/generate_sbom.py",
+      "args": [
+        "--format", "json",
+        "--output", "sbom.json",
+        "--include-dev"
+      ],
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/src"
+      },
+      "justMyCode": false
+    }
+  ],
+  
+  "compounds": [
+    {
+      "name": "Full Test Suite Debug",
+      "configurations": [
+        "Python: Run Unit Tests",
+        "Python: Run Integration Tests"
+      ],
+      "stopAll": true
+    },
+    
+    {
+      "name": "Hardware Profiling Session",
+      "configurations": [
+        "Python: Hardware Profiling Session",
+        "Python: Power Profiling"
+      ],
+      "stopAll": true
+    }
+  ]
+}

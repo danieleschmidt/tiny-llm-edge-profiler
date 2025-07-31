@@ -1,0 +1,340 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "description": "Advanced Renovate configuration for intelligent dependency management and security automation",
+  
+  "extends": [
+    "config:recommended",
+    "docker:enableMajor",
+    "helpers:pinGitHubActionsByDigest",
+    "security:openssf-scorecard"
+  ],
+  
+  "schedule": [
+    "before 6am on monday"
+  ],
+  
+  "timezone": "America/New_York",
+  
+  "labels": [
+    "dependencies",
+    "automated"
+  ],
+  
+  "assignees": [
+    "terragon-labs/maintainers"
+  ],
+  
+  "reviewers": [
+    "terragon-labs/security-team"
+  ],
+  
+  "prConcurrentLimit": 10,
+  "branchConcurrentLimit": 20,
+  
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": [
+      "before 3am on sunday"
+    ],
+    "commitMessageAction": "Lock file maintenance"
+  },
+  
+  "vulnerabilityAlerts": {
+    "enabled": true,
+    "schedule": [
+      "at any time"
+    ],
+    "labels": [
+      "security",
+      "vulnerability"
+    ],
+    "assignees": [
+      "terragon-labs/security-team"
+    ],
+    "reviewers": [
+      "terragon-labs/security-team"
+    ],
+    "prPriority": 10
+  },
+  
+  "osvVulnerabilityAlerts": true,
+  
+  "packageRules": [
+    {
+      "description": "Critical security updates - immediate processing",
+      "matchDatasources": ["pypi", "github-actions", "docker"],
+      "matchDepTypes": ["dependencies", "action"],
+      "vulnerabilitySeverity": ["HIGH", "CRITICAL"],
+      "schedule": ["at any time"],
+      "prPriority": 10,
+      "labels": ["security", "critical"],
+      "assignees": ["terragon-labs/security-team"],
+      "reviewers": ["terragon-labs/security-team"]
+    },
+    
+    {
+      "description": "Python core runtime dependencies",
+      "matchPackageNames": [
+        "numpy",
+        "pandas", 
+        "pyserial",
+        "pydantic",
+        "asyncio-mqtt",
+        "click",
+        "rich",
+        "plotly",
+        "psutil",
+        "aiofiles",
+        "httpx"
+      ],
+      "groupName": "core runtime",
+      "schedule": ["before 6am on monday"],
+      "prPriority": 8,
+      "labels": ["core-dependencies"],
+      "minimumReleaseAge": "3 days",
+      "internalChecksFilter": "strict"
+    },
+    
+    {
+      "description": "Hardware interface dependencies - careful testing required",
+      "matchPackageNames": [
+        "pyftdi",
+        "adafruit-circuitpython-busdevice", 
+        "adafruit-circuitpython-ina219",
+        "RPi.GPIO"
+      ],
+      "groupName": "hardware drivers",
+      "schedule": ["before 6am on monday"],
+      "prPriority": 6,
+      "labels": ["hardware-drivers"],
+      "minimumReleaseAge": "7 days",
+      "updateTypes": ["patch", "pin"],
+      "reviewersSampleSize": 2
+    },
+    
+    {
+      "description": "AI/ML stack - requires extensive validation",
+      "matchPackageNames": [
+        "torch",
+        "torchvision", 
+        "transformers",
+        "onnx",
+        "onnxruntime",
+        "tensorrt"
+      ],
+      "groupName": "ai-ml stack",
+      "schedule": ["before 6am on monday"],
+      "prPriority": 5,
+      "labels": ["ai-ml", "performance-critical"],
+      "minimumReleaseAge": "14 days",
+      "updateTypes": ["patch"],
+      "reviewersSampleSize": 3
+    },
+    
+    {
+      "description": "Testing framework dependencies",
+      "matchPackageNames": [
+        "pytest",
+        "pytest-asyncio",
+        "pytest-cov", 
+        "pytest-mock",
+        "pytest-timeout",
+        "coverage",
+        "factory-boy",
+        "faker"
+      ],
+      "groupName": "testing framework",
+      "schedule": ["before 6am on tuesday"],
+      "prPriority": 7,
+      "labels": ["testing"]
+    },
+    
+    {
+      "description": "Development tools and linting",
+      "matchPackageNames": [
+        "black",
+        "flake8",
+        "mypy", 
+        "ruff",
+        "pre-commit",
+        "bandit"
+      ],
+      "groupName": "development tools",
+      "schedule": ["before 6am on tuesday"],
+      "prPriority": 4,
+      "labels": ["development-tools"]
+    },
+    
+    {
+      "description": "Security and SBOM tools",
+      "matchPackageNames": [
+        "cyclonedx-bom",
+        "pip-audit",
+        "safety",
+        "bandit"
+      ],
+      "groupName": "security tools",
+      "schedule": ["at any time"],
+      "prPriority": 9,
+      "labels": ["security-tools"],
+      "minimumReleaseAge": "1 day"
+    },
+    
+    {
+      "description": "Documentation tools",
+      "matchPackageNames": [
+        "mkdocs",
+        "mkdocs-material",
+        "mkdocs-mermaid2-plugin",
+        "mkdocstrings"
+      ],
+      "groupName": "documentation",
+      "schedule": ["before 6am on wednesday"],
+      "prPriority": 3,
+      "labels": ["documentation"]
+    },
+    
+    {
+      "description": "GitHub Actions - security and reliability focused",
+      "matchDatasources": ["github-actions"],
+      "groupName": "github actions",
+      "schedule": ["before 6am on tuesday"],
+      "prPriority": 7,
+      "labels": ["github-actions"],
+      "pinDigests": true,
+      "minimumReleaseAge": "3 days"
+    },
+    
+    {
+      "description": "Docker base images - security focused",
+      "matchDatasources": ["docker"],
+      "matchPackageNames": [
+        "python",
+        "ubuntu",
+        "alpine"
+      ],
+      "groupName": "docker base images",
+      "schedule": ["before 6am on wednesday"],
+      "prPriority": 8,
+      "labels": ["docker", "security"],
+      "minimumReleaseAge": "7 days"
+    },
+    
+    {
+      "description": "Major version updates - manual review required",
+      "matchUpdateTypes": ["major"],
+      "enabled": true,
+      "schedule": ["before 6am on sunday"],
+      "prPriority": 2,
+      "labels": ["major-update", "breaking-change"],
+      "minimumReleaseAge": "30 days",
+      "reviewersSampleSize": 3,
+      "assigneesSampleSize": 2
+    }
+  ],
+  
+  "regexManagers": [
+    {
+      "description": "Update Python version in Dockerfile",
+      "fileMatch": ["^Dockerfile$"],
+      "matchStrings": [
+        "FROM python:(?<currentValue>.*?)(?:-(?<currentDigest>sha256:[a-f0-9]+))?\\s"
+      ],
+      "datasourceTemplate": "docker",
+      "depNameTemplate": "python"
+    },
+    
+    {
+      "description": "Update UV version in scripts",
+      "fileMatch": ["^scripts/.*\\.sh$", "^Makefile$"],
+      "matchStrings": [
+        "UV_VERSION=(?<currentValue>.*?)\\s"
+      ],
+      "datasourceTemplate": "github-releases",
+      "depNameTemplate": "astral-sh/uv"
+    }
+  ],
+  
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Update versions in pyproject.toml requires-python",
+      "fileMatch": ["^pyproject\\.toml$"],
+      "matchStrings": [
+        "requires-python\\s*=\\s*\">=(?<currentValue>.*?)\""
+      ],
+      "datasourceTemplate": "github-tags",
+      "depNameTemplate": "python/cpython",
+      "extractVersionTemplate": "^v(?<version>.*)$"
+    }
+  ],
+  
+  "platformAutomerge": true,
+  
+  "automerge": true,
+  "automergeType": "pr",
+  "automergeStrategy": "squash",
+  
+  "platformAutomergeStrategy": "squash",
+  
+  "automergeSchedule": [
+    "after 9am and before 5pm on weekdays"
+  ],
+  
+  "automergeMajor": false,
+  "automergeMinor": true,
+  "automergePatch": true,
+  "automergePin": true,
+  "automergeDigest": true,
+  
+  "internalChecksFilter": "strict",
+  
+  "prCreation": "not-pending",
+  
+  "rangeStrategy": "bump",
+  
+  "semanticCommits": "enabled",
+  "semanticCommitType": "deps",
+  "semanticCommitScope": null,
+  
+  "postUpdateOptions": [
+    "pythonPoetryMassage"
+  ],
+  
+  "python": {
+    "ignorePaths": [
+      "firmware/**",
+      "examples/**",
+      "docs/**"
+    ]
+  },
+  
+  "docker": {
+    "ignorePaths": [
+      "firmware/**",
+      "examples/**"
+    ]
+  },
+  
+  "enabledManagers": [
+    "pip_requirements",
+    "pip_setup",
+    "pipenv",
+    "poetry", 
+    "pep621",
+    "github-actions",
+    "docker-compose",
+    "dockerfile"
+  ],
+  
+  "forkProcessing": "enabled",
+  
+  "dependencyDashboard": true,
+  "dependencyDashboardTitle": "🤖 Dependency Management Dashboard",
+  "dependencyDashboardHeader": "This issue contains a list of Renovate updates and their statuses. Click into the individual PRs for more details.",
+  "dependencyDashboardFooter": "Managed by Terragon Labs Security Team",
+  
+  "suppressNotifications": [
+    "prIgnoreNotification"
+  ]
+}
