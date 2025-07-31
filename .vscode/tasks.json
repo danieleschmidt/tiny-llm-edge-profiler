@@ -1,0 +1,399 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Setup Development Environment",
+      "type": "shell",
+      "command": "make",
+      "args": ["dev-setup"],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": true,
+        "clear": false
+      },
+      "problemMatcher": [],
+      "detail": "Set up complete development environment with dependencies"
+    },
+    
+    {
+      "label": "Run Full Test Suite",
+      "type": "shell", 
+      "command": "make",
+      "args": ["test"],
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      },
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": [
+        "$python"
+      ],
+      "detail": "Run complete test suite with coverage"
+    },
+    
+    {
+      "label": "Run Unit Tests Only",
+      "type": "shell",
+      "command": "pytest",
+      "args": [
+        "tests/unit/",
+        "-v",
+        "--tb=short",
+        "--cov=src/tiny_llm_profiler",
+        "--cov-report=term-missing"
+      ],
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": [
+        "$python"
+      ],
+      "detail": "Run only unit tests with coverage"
+    },
+    
+    {
+      "label": "Run Integration Tests",
+      "type": "shell",
+      "command": "pytest",
+      "args": [
+        "tests/integration/",
+        "-v",
+        "--tb=short"
+      ],
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": [
+        "$python"
+      ],
+      "detail": "Run integration tests"
+    },
+    
+    {
+      "label": "Run Hardware Tests",
+      "type": "shell",
+      "command": "pytest",
+      "args": [
+        "tests/hardware/",
+        "-v",
+        "--tb=short",
+        "-m", "hardware"
+      ],
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": [
+        "$python"
+      ],
+      "detail": "Run hardware-in-the-loop tests (requires physical devices)"
+    },
+    
+    {
+      "label": "Code Quality Check",
+      "type": "shell",
+      "command": "make",
+      "args": ["lint"],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": [
+        "$python",
+        "$eslint-stylish"
+      ],
+      "detail": "Run all code quality checks (linting, formatting, type checking)"
+    },
+    
+    {
+      "label": "Security Scan",
+      "type": "shell",
+      "command": "make",
+      "args": ["security-scan"],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": [],
+      "detail": "Run security vulnerability scans"
+    },
+    
+    {
+      "label": "Generate SBOM",
+      "type": "shell",
+      "command": "make",
+      "args": ["sbom"],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": [],
+      "detail": "Generate Software Bill of Materials"
+    },
+    
+    {
+      "label": "Format Code",
+      "type": "shell",
+      "command": "make",
+      "args": ["format"],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "silent",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": [],
+      "detail": "Format code with Black and sort imports"
+    },
+    
+    {
+      "label": "Type Check",
+      "type": "shell",
+      "command": "mypy",
+      "args": [
+        "src/tiny_llm_profiler",
+        "--config-file=pyproject.toml"
+      ],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },  
+      "problemMatcher": [
+        "$mypy"
+      ],
+      "detail": "Run MyPy static type checking"
+    },
+    
+    {
+      "label": "Build Documentation",
+      "type": "shell",
+      "command": "make",
+      "args": ["docs"],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": [],
+      "detail": "Build documentation with MkDocs"
+    },
+    
+    {
+      "label": "Serve Documentation",
+      "type": "shell",
+      "command": "make",
+      "args": ["docs-serve"],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": [],
+      "detail": "Serve documentation locally with live reload"
+    },
+    
+    {
+      "label": "Build Package",
+      "type": "shell",
+      "command": "make",
+      "args": ["build"],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": [
+        "$python"
+      ],
+      "detail": "Build Python package for distribution"
+    },
+    
+    {
+      "label": "Clean Build Artifacts",
+      "type": "shell",
+      "command": "make",
+      "args": ["clean"],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "silent",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": [],
+      "detail": "Clean all build artifacts and cache files"
+    },
+    
+    {
+      "label": "Docker Build",
+      "type": "shell",
+      "command": "docker",
+      "args": [
+        "build",
+        "-t", "tiny-llm-profiler:latest",
+        "--target", "development",
+        "."
+      ],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": [],
+      "detail": "Build Docker development image"
+    },
+    
+    {
+      "label": "Docker Run Dev Environment",
+      "type": "shell",
+      "command": "docker",
+      "args": [
+        "run",
+        "-it",
+        "--rm",
+        "-v", "${workspaceFolder}:/workspace",
+        "-v", "/dev:/dev",
+        "--privileged",
+        "tiny-llm-profiler:latest",
+        "bash"
+      ],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": [],
+      "detail": "Run development environment in Docker container"
+    },
+    
+    {
+      "label": "Performance Benchmark",
+      "type": "shell",
+      "command": "pytest",
+      "args": [
+        "tests/performance/",
+        "-v",
+        "--tb=short",
+        "-m", "benchmark",
+        "--benchmark-only"
+      ],
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": [
+        "$python"
+      ],
+      "detail": "Run performance benchmarks"
+    },
+    
+    {
+      "label": "Pre-commit All Files",
+      "type": "shell",
+      "command": "pre-commit",
+      "args": [
+        "run",
+        "--all-files"
+      ],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": [
+        "$python"
+      ],
+      "detail": "Run pre-commit hooks on all files"
+    },
+    
+    {
+      "label": "Update Pre-commit Hooks",
+      "type": "shell",
+      "command": "pre-commit",
+      "args": [
+        "autoupdate"
+      ],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": [],
+      "detail": "Update pre-commit hook versions"
+    },
+    
+    {
+      "label": "Install Package in Development Mode",
+      "type": "shell",
+      "command": "pip",
+      "args": [
+        "install",
+        "-e", ".[dev,test,hardware,docs,sbom]"
+      ],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": [
+        "$python"
+      ],
+      "detail": "Install package in development mode with all optional dependencies"
+    }
+  ]
+}

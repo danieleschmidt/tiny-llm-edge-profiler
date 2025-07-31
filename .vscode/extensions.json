@@ -1,0 +1,88 @@
+{
+  "recommendations": [
+    // Python development essentials
+    "ms-python.python",
+    "ms-python.flake8",
+    "ms-python.black-formatter", 
+    "ms-python.mypy-type-checker",
+    "charliermarsh.ruff",
+    "ms-python.pylint",
+    
+    // Advanced Python tools
+    "ms-python.debugpy",
+    "njpwerner.autodocstring",
+    "kevinrose.vsc-python-indent",
+    "wholroyd.jinja",
+    
+    // Testing and coverage
+    "littlefoxteam.vscode-python-test-adapter",
+    "ryanluker.vscode-coverage-gutters",
+    "hbenl.vscode-test-explorer",
+    
+    // Git and version control
+    "eamodio.gitlens",
+    "github.vscode-pull-request-github",
+    "github.copilot",
+    "github.copilot-chat",
+    
+    // Docker and containerization
+    "ms-azuretools.vscode-docker",
+    "ms-vscode-remote.remote-containers",
+    
+    // Hardware development
+    "platformio.platformio-ide",
+    "ms-vscode.vscode-serial-monitor",
+    "webfreak.debug",
+    
+    // Documentation and markdown
+    "yzhang.markdown-all-in-one",
+    "davidanson.vscode-markdownlint",
+    "bierner.markdown-mermaid",
+    "redhat.vscode-yaml",
+    
+    // Security and quality
+    "ms-vscode.vscode-github-issue-notebooks",
+    "github.vscode-github-actions",
+    "redhat.vscode-xml",
+    "redhat.vscode-commons",
+    
+    // Performance and profiling
+    "ms-python.vscode-pylance",
+    "formulahendry.code-runner",
+    "ms-toolsai.jupyter",
+    "ms-toolsai.vscode-jupyter-cell-tags",
+    
+    // Advanced development tools
+    "ms-vscode.makefile-tools",
+    "timonwong.shellcheck",
+    "foxundermoon.shell-format",
+    "rogalmic.bash-debug",
+    
+    // AI/ML development
+    "ms-toolsai.vscode-ai",
+    "github.copilot-labs",
+    "ms-python.gather",
+    
+    // Collaboration and productivity
+    "ms-vsliveshare.vsliveshare",
+    "gruntfuggly.todo-tree",
+    "streetsidesoftware.code-spell-checker",
+    "usernamehw.errorlens",
+    
+    // Advanced editing
+    "bradlc.vscode-tailwindcss",
+    "ms-vscode.vscode-json",
+    "tamasfe.even-better-toml",
+    "bungcip.better-toml"
+  ],
+  
+  "unwantedRecommendations": [
+    // Conflicting Python extensions
+    "ms-python.autopep8",
+    "himanoa.Python-autopep8",
+    
+    // Deprecated or conflicting tools
+    "ms-python.isort",
+    "wholroyd.HookyQR.beautify"
+  ]
+}
