@@ -1,0 +1,263 @@
+# Terragon Autonomous SDLC Value Discovery Configuration
+# Repository: tiny-llm-edge-profiler
+# Maturity Level: ADVANCED (90%+)
+
+metadata:
+  project_name: "tiny-llm-edge-profiler"
+  repository_maturity: "advanced"  # nascent | developing | maturing | advanced
+  maturity_score: 92
+  last_assessment: "2025-01-15T10:30:00Z"
+  primary_language: "python"
+  framework: "pytest"
+  architecture_type: "microservice"
+
+# Adaptive scoring weights based on repository maturity
+scoring:
+  weights:
+    advanced:  # Current maturity level
+      wsjf: 0.5          # Weighted Shortest Job First
+      ice: 0.1           # Impact, Confidence, Ease
+      technical_debt: 0.3 # Technical debt reduction value
+      security: 0.1      # Security improvement value
+  
+  # Score thresholds for work item selection
+  thresholds:
+    min_composite_score: 15.0
+    max_risk_tolerance: 0.8
+    security_boost_multiplier: 2.0
+    compliance_boost_multiplier: 1.8
+    performance_boost_multiplier: 1.5
+
+# Value discovery signal sources
+discovery:
+  sources:
+    code_analysis:
+      enabled: true
+      patterns:
+        - "TODO|FIXME|HACK|XXX"
+        - "deprecated|temporary|quick.?fix"
+        - "\\bbus.?factor\\b|\\bknowledge.?silo\\b"
+      exclude_paths:
+        - ".git/"
+        - "__pycache__/"
+        - "node_modules/"
+        - ".venv/"
+        
+    static_analysis:
+      enabled: true
+      tools:
+        - name: "ruff"
+          weight: 0.3
+        - name: "mypy" 
+          weight: 0.2
+        - name: "bandit"
+          weight: 0.3
+        - name: "safety"
+          weight: 0.2
+          
+    dependency_analysis:
+      enabled: true
+      sources:
+        - "requirements.txt"
+        - "requirements-dev.txt" 
+        - "pyproject.toml"
+      update_frequency: "weekly"
+      security_update_priority: "high"
+      
+    performance_analysis:
+      enabled: true
+      benchmark_threshold_regression: 0.05  # 5% regression threshold
+      memory_threshold_increase: 0.1        # 10% memory increase threshold
+      
+    git_history:
+      enabled: true
+      commit_message_patterns:
+        - "quick.?fix|temporary|hack"
+        - "\\bWIP\\b|work.?in.?progress"
+        - "\\btodo\\b|\\bfixme\\b"
+      file_churn_threshold: 10  # Files changed >10 times recently
+      
+    external_signals:
+      github_issues:
+        enabled: true
+        labels:
+          - "bug"
+          - "enhancement" 
+          - "security"
+          - "performance"
+          - "technical-debt"
+      dependabot_alerts:
+        enabled: true
+        auto_merge_patch: true
+        auto_merge_minor: false
+
+# Execution configuration
+execution:
+  concurrent_tasks: 1
+  task_timeout_minutes: 120
+  
+  # Quality gates for autonomous execution
+  quality_gates:
+    min_test_coverage: 0.80
+    max_security_issues: 0
+    max_performance_regression: 0.10
+    
+  # Rollback triggers
+  rollback_conditions:
+    - "test_failure"
+    - "build_failure" 
+    - "security_violation"
+    - "performance_degradation"
+    
+  # Auto-merge conditions for autonomous PRs  
+  auto_merge:
+    enabled: true
+    conditions:
+      - "all_checks_pass"
+      - "no_human_review_required"
+      - "low_risk_score"
+    max_risk_score: 0.3
+
+# Task categorization and prioritization
+task_categories:
+  security:
+    priority: "critical"
+    auto_execute: true
+    require_review: false
+    
+  dependency_updates:
+    priority: "high"
+    auto_execute: true
+    require_review: false
+    patch_updates: true
+    minor_updates: false
+    major_updates: false
+    
+  technical_debt:
+    priority: "medium"
+    auto_execute: true
+    require_review: true
+    complexity_threshold: "low"  # Only auto-execute low complexity debt
+    
+  performance:
+    priority: "medium" 
+    auto_execute: false
+    require_review: true
+    
+  documentation:
+    priority: "low"
+    auto_execute: true
+    require_review: false
+    
+  refactoring:
+    priority: "low"
+    auto_execute: false
+    require_review: true
+
+# Learning and adaptation
+learning:
+  enabled: true
+  model_update_frequency: "monthly"
+  confidence_threshold: 0.7
+  
+  # Track accuracy of predictions vs outcomes
+  metrics:
+    effort_estimation_accuracy: 0.85
+    value_prediction_accuracy: 0.78
+    false_positive_rate: 0.12
+    
+  # Feedback collection
+  feedback_sources:
+    - "pr_reviews"
+    - "issue_comments"  
+    - "build_outcomes"
+    - "deployment_results"
+
+# Integration settings
+integrations:
+  github:
+    enabled: true
+    auto_create_issues: true
+    auto_create_prs: true
+    label_prefix: "auto-value"
+    
+  monitoring:
+    prometheus_endpoint: "http://localhost:9090"
+    grafana_dashboard: "tiny-llm-profiler-metrics"
+    alert_webhook: null
+    
+  notifications:
+    slack_webhook: null
+    email_alerts: false
+    teams_webhook: null
+
+# Continuous discovery schedule
+schedule:
+  immediate:
+    trigger: "on_pr_merge"
+    actions:
+      - "scan_for_new_issues"
+      - "update_backlog"
+      - "select_next_task"
+      
+  hourly:
+    actions:
+      - "security_vulnerability_scan"
+      - "dependency_update_check"
+      
+  daily:
+    time: "02:00"
+    actions:
+      - "comprehensive_static_analysis"
+      - "performance_benchmark_comparison"
+      - "technical_debt_assessment"
+      
+  weekly:
+    day: "monday"
+    time: "03:00"
+    actions:
+      - "deep_architecture_analysis"
+      - "modernization_opportunity_scan" 
+      - "compliance_status_review"
+      
+  monthly:
+    day: 1
+    time: "04:00"
+    actions:
+      - "strategic_value_alignment_review"
+      - "scoring_model_recalibration"
+      - "learning_model_update"
+
+# Advanced features for this maturity level
+advanced_features:
+  ai_assisted_refactoring:
+    enabled: true
+    complexity_analysis: true
+    design_pattern_suggestions: true
+    
+  predictive_analytics:
+    enabled: true
+    failure_prediction: true
+    bottleneck_prediction: true
+    maintenance_burden_prediction: true
+    
+  automated_optimization:
+    enabled: true
+    performance_tuning: true
+    memory_optimization: true
+    dependency_optimization: true
+    
+  compliance_automation:
+    enabled: true
+    regulatory_frameworks:
+      - "gdpr"
+      - "nist_csf"
+      - "iso_27001"
+      - "eu_cyber_resilience_act"
+    automated_evidence_collection: true
+    
+  innovation_pipeline:
+    enabled: true
+    emerging_tech_evaluation: true
+    modernization_roadmap: true
+    technology_debt_tracking: true
