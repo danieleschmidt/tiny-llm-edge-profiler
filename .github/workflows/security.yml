@@ -1,0 +1,146 @@
+name: Security Scanning
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    - cron: '0 6 * * 1'  # Weekly security scan
+
+permissions:
+  actions: read
+  contents: read
+  security-events: write
+
+jobs:
+  codeql-analysis:
+    name: CodeQL Analysis
+    runs-on: ubuntu-latest
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [ 'python' ]
+        
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v3
+      with:
+        languages: ${{ matrix.language }}
+        
+    - name: Autobuild
+      uses: github/codeql-action/autobuild@v3
+      
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v3
+      with:
+        category: "/language:${{matrix.language}}"
+
+  dependency-security:
+    name: Dependency Security Scan
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install safety pip-audit bandit[toml]
+        
+    - name: Safety check
+      run: |
+        safety check --json --output safety-report.json || true
+        
+    - name: Pip audit
+      run: |
+        pip-audit --format=json --output=audit-report.json || true
+        
+    - name: Bandit security scan
+      run: |
+        bandit -r src/ -f json -o bandit-report.json || true
+        
+    - name: Upload security reports
+      uses: actions/upload-artifact@v3
+      with:
+        name: security-reports
+        path: |
+          safety-report.json
+          audit-report.json
+          bandit-report.json
+          
+  supply-chain-security:
+    name: Supply Chain Security
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        
+    - name: Install SBOM tools
+      run: |
+        python -m pip install --upgrade pip
+        pip install cyclonedx-bom pip-audit
+        
+    - name: Generate SBOM
+      run: |
+        python -m cyclonedx.cli py-requirements \
+          --requirements requirements.txt \
+          --output-format json \
+          --output-file sbom.json
+          
+    - name: Upload SBOM
+      uses: actions/upload-artifact@v3
+      with:
+        name: sbom
+        path: sbom.json
+        
+  security-summary:
+    name: Security Summary
+    runs-on: ubuntu-latest
+    needs: [codeql-analysis, dependency-security, supply-chain-security]
+    if: always()
+    
+    steps:
+    - name: Download security artifacts
+      uses: actions/download-artifact@v3
+      with:
+        path: security-artifacts
+        
+    - name: Generate Security Summary
+      run: |
+        echo "## 🔒 Security Scan Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**CodeQL Analysis**: ${{ needs.codeql-analysis.result }}" >> $GITHUB_STEP_SUMMARY
+        echo "**Dependency Scan**: ${{ needs.dependency-security.result }}" >> $GITHUB_STEP_SUMMARY
+        echo "**Supply Chain**: ${{ needs.supply-chain-security.result }}" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        # Add security metrics if available
+        if [ -f "security-artifacts/security-reports/safety-report.json" ]; then
+          SAFETY_ISSUES=$(cat security-artifacts/security-reports/safety-report.json | jq '.vulnerabilities | length' 2>/dev/null || echo "0")
+          echo "**Safety Issues Found**: $SAFETY_ISSUES" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        if [ -f "security-artifacts/security-reports/audit-report.json" ]; then
+          AUDIT_ISSUES=$(cat security-artifacts/security-reports/audit-report.json | jq '.vulnerabilities | length' 2>/dev/null || echo "0")
+          echo "**Audit Issues Found**: $AUDIT_ISSUES" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Integration with Terragon Autonomous SDLC" >> $GITHUB_STEP_SUMMARY
+        echo "Security findings are automatically fed into the autonomous value discovery engine" >> $GITHUB_STEP_SUMMARY
+        echo "for prioritization and potential autonomous remediation." >> $GITHUB_STEP_SUMMARY

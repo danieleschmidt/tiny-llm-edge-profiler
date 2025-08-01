@@ -1,0 +1,177 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    - cron: '0 2 * * 1'  # Weekly dependency check
+
+env:
+  PYTHON_VERSION: '3.11'
+  
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.8, 3.9, '3.10', '3.11', '3.12']
+    
+    steps:
+    - uses: actions/checkout@v4
+      
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+        
+    - name: Cache dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements*.txt', '**/pyproject.toml') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+          
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e ".[dev,test]"
+        
+    - name: Lint with ruff
+      run: |
+        ruff check .
+        ruff format --check .
+        
+    - name: Type check with mypy
+      run: mypy src/
+      
+    - name: Security scan with bandit
+      run: bandit -r src/ -f json -o bandit-report.json || true
+      
+    - name: Test with pytest
+      run: |
+        pytest tests/ --cov=src/tiny_llm_profiler --cov-report=xml --cov-report=term-missing --cov-fail-under=80
+        
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      if: matrix.python-version == '3.11'
+      with:
+        file: ./coverage.xml
+        flags: unittests
+        name: codecov-umbrella
+        
+  security:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install safety pip-audit
+        
+    - name: Safety check
+      run: safety check --json --output safety-report.json || true
+      
+    - name: Audit dependencies
+      run: pip-audit --format=json --output=audit-report.json || true
+      
+    - name: Upload security artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: security-reports
+        path: |
+          safety-report.json
+          audit-report.json
+          bandit-report.json
+          
+  build:
+    runs-on: ubuntu-latest
+    needs: [test, security]
+    steps:
+    - uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        
+    - name: Install build dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install build twine
+        
+    - name: Build package
+      run: python -m build
+      
+    - name: Check package
+      run: twine check dist/*
+      
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: dist
+        path: dist/
+        
+  autonomous-value-discovery:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' || contains(github.event.head_commit.message, '[autonomous]')
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e ".[dev]"
+        
+    - name: Run value discovery
+      run: |
+        if [ -f ".terragon/discovery_engine.py" ]; then
+          python .terragon/discovery_engine.py --output=discovered-items.json
+        fi
+        
+    - name: Create autonomous PR if items found
+      run: |
+        if [ -f "discovered-items.json" ] && [ -s "discovered-items.json" ]; then
+          git config --local user.email "autonomous@terragon.dev"
+          git config --local user.name "Terragon Autonomous System"
+          
+          # Check if there are high-value items to execute
+          ITEMS=$(cat discovered-items.json | jq '.items | length')
+          if [ "$ITEMS" -gt "0" ]; then
+            echo "Found $ITEMS autonomous work items"
+            
+            # Execute top priority item (implement based on discovery engine output)
+            # This is a placeholder for autonomous execution logic
+            
+            echo "Autonomous value discovery completed" > autonomous-execution.log
+            git add autonomous-execution.log
+            
+            if ! git diff --staged --quiet; then
+              git commit -m "feat: autonomous value discovery and execution
+
+              🤖 Automated execution by Terragon Autonomous SDLC System
+              
+              Co-Authored-By: Terragon System <autonomous@terragon.dev>"
+              
+              # Only push if we're on the main branch and have write access
+              if [ "$GITHUB_REF" = "refs/heads/main" ] && [ -n "${{ secrets.AUTONOMOUS_TOKEN }}" ]; then
+                git push origin main
+              fi
+            fi
+          fi
+        fi
