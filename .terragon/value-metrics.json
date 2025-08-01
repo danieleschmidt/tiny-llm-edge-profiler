@@ -1,0 +1,83 @@
+{
+  "metadata": {
+    "generated_at": "2025-08-01T02:51:47.312702Z",
+    "repository": "tiny-llm-edge-profiler",
+    "maturity_level": "advanced",
+    "version": "1.0.0"
+  },
+  "current_backlog": {
+    "total_items": 19,
+    "by_category": {
+      "technical_debt": 12,
+      "dependency_update": 5,
+      "performance": 2
+    },
+    "by_priority": {
+      "medium": 14,
+      "high": 5
+    }
+  },
+  "execution_history": {
+    "total_items_completed": 0,
+    "success_rate": 0.0,
+    "average_cycle_time_hours": 0.0,
+    "recent_completions": []
+  },
+  "value_metrics": {
+    "total_value_delivered": 0,
+    "cumulative_wsjf_score": 0.0,
+    "technical_debt_reduced_percentage": 0.0,
+    "security_improvements": 0,
+    "performance_gains_percentage": 0.0,
+    "code_quality_improvement_percentage": 0.0
+  },
+  "learning_metrics": {
+    "estimation_accuracy": 0.85,
+    "value_prediction_accuracy": 0.78,
+    "false_positive_rate": 0.12,
+    "model_confidence": 0.73,
+    "adaptation_cycles_completed": 0
+  },
+  "operational_metrics": {
+    "autonomous_pr_success_rate": 0.0,
+    "human_intervention_required_percentage": 0.0,
+    "rollback_rate": 0.0,
+    "mean_time_to_value_hours": 0.0,
+    "build_success_rate": 0.0
+  },
+  "discovery_sources": {
+    "code_analysis": {
+      "enabled": true,
+      "last_scan": "2025-08-01T02:51:47.312752Z",
+      "items_found": 12
+    },
+    "static_analysis": {
+      "enabled": true,
+      "last_scan": null,
+      "items_found": 0
+    },
+    "dependency_analysis": {
+      "enabled": true,
+      "last_scan": "2025-08-01T02:51:47.312758Z",
+      "items_found": 5
+    },
+    "git_history": {
+      "enabled": true,
+      "last_scan": null,
+      "items_found": 0
+    },
+    "github_issues": {
+      "enabled": true,
+      "last_scan": null,
+      "items_found": 0
+    }
+  },
+  "quality_trends": {
+    "test_coverage_trend": [],
+    "security_score_trend": [],
+    "performance_trend": [],
+    "technical_debt_trend": []
+  },
+  "next_scheduled_discovery": "2025-01-15T11:00:00Z",
+  "configuration_last_updated": "2025-01-15T10:30:00Z"
+}
