@@ -1,0 +1,108 @@
+name: Platform Support Request
+description: Request support for a new hardware platform
+title: "[Platform]: "
+labels: ["platform-support", "enhancement"]
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Request support for a new hardware platform or device!
+        
+  - type: input
+    id: platform-name
+    attributes:
+      label: Platform/Device Name
+      description: What platform or device would you like supported?
+      placeholder: "e.g., ESP32-C3, STM32H7, Arduino Nano 33 BLE"
+    validations:
+      required: true
+      
+  - type: dropdown
+    id: architecture
+    attributes:
+      label: Architecture
+      description: What architecture does this platform use?
+      options:
+        - ARM Cortex-M0+
+        - ARM Cortex-M3
+        - ARM Cortex-M4
+        - ARM Cortex-M7
+        - ARM Cortex-A
+        - RISC-V RV32
+        - RISC-V RV64
+        - Xtensa LX6
+        - Xtensa LX7
+        - Other
+    validations:
+      required: true
+      
+  - type: textarea
+    id: specifications
+    attributes:
+      label: Hardware Specifications
+      description: Please provide key hardware specifications
+      placeholder: |
+        - CPU: ARM Cortex-M4 @ 168MHz
+        - RAM: 192KB SRAM
+        - Flash: 1MB
+        - Special features: FPU, DSP instructions
+    validations:
+      required: true
+      
+  - type: textarea
+    id: toolchain
+    attributes:
+      label: Development Toolchain
+      description: What development tools and SDKs are available?
+      placeholder: |
+        - Compiler: GCC ARM
+        - SDK: STM32CubeIDE
+        - Debug: ST-Link
+        - Build system: CMake
+        
+  - type: textarea
+    id: use-case
+    attributes:
+      label: Use Case
+      description: What would you use this platform for? What models/applications?
+      placeholder: "Smart home assistant running TinyLLaMA 2-bit on battery power"
+    validations:
+      required: true
+      
+  - type: input
+    id: availability
+    attributes:
+      label: Hardware Availability
+      description: Is this hardware readily available? Where can it be purchased?
+      placeholder: "Available on Mouser/Digikey, ~$15 USD"
+      
+  - type: textarea
+    id: constraints
+    attributes:
+      label: Platform Constraints
+      description: Any special constraints or limitations to consider?
+      placeholder: |
+        - Limited to 2MB models due to flash size
+        - No FPU support
+        - Low power requirements
+        
+  - type: checkboxes
+    id: contribution
+    attributes:
+      label: Contribution
+      description: Would you be able to help with implementation?
+      options:
+        - label: I can provide hardware for testing
+        - label: I can help with code implementation
+        - label: I can help with documentation
+        - label: I can test the implementation
+        
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Code of Conduct
+      description: By submitting this issue, you agree to follow our Code of Conduct
+      options:
+        - label: I agree to follow this project's Code of Conduct
+          required: true
