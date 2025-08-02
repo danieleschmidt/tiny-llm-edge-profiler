@@ -1,0 +1,163 @@
+{
+  "project": {
+    "name": "tiny-llm-edge-profiler",
+    "description": "Edge AI model profiling and optimization toolkit",
+    "version": "1.0.0",
+    "owner": "danieleschmidt",
+    "repository": "danieleschmidt/tiny-llm-edge-profiler"
+  },
+  "metrics": {
+    "code_quality": {
+      "coverage_threshold": 85,
+      "complexity_threshold": 10,
+      "maintainability_index_threshold": 70,
+      "technical_debt_ratio_threshold": 5.0,
+      "duplication_percentage_threshold": 3.0
+    },
+    "performance": {
+      "build_time_threshold_minutes": 10,
+      "test_execution_time_threshold_minutes": 5,
+      "deployment_time_threshold_minutes": 15,
+      "startup_time_threshold_seconds": 30
+    },
+    "security": {
+      "critical_vulnerabilities_threshold": 0,
+      "high_vulnerabilities_threshold": 2,
+      "medium_vulnerabilities_threshold": 10,
+      "dependency_update_frequency_days": 7,
+      "security_scan_frequency_days": 1
+    },
+    "reliability": {
+      "uptime_percentage_threshold": 99.5,
+      "error_rate_percentage_threshold": 0.1,
+      "mean_time_to_recovery_minutes": 30,
+      "change_failure_rate_percentage": 5.0
+    },
+    "development": {
+      "lead_time_days": 3,
+      "deployment_frequency": "daily",
+      "pr_review_time_hours": 24,
+      "hotfix_resolution_hours": 4,
+      "feature_completion_rate_percentage": 90
+    }
+  },
+  "tracking": {
+    "enabled": true,
+    "collection_interval_hours": 24,
+    "retention_days": 90,
+    "export_formats": ["json", "csv", "prometheus"],
+    "alert_thresholds": {
+      "coverage_drop_percentage": 5,
+      "build_failure_count": 3,
+      "security_alert_severity": "high"
+    }
+  },
+  "dashboards": {
+    "grafana": {
+      "enabled": true,
+      "url": "http://localhost:3000",
+      "dashboard_ids": {
+        "overview": "tiny-llm-profiler-overview",
+        "performance": "tiny-llm-profiler-performance",
+        "security": "tiny-llm-profiler-security",
+        "development": "tiny-llm-profiler-development"
+      }
+    },
+    "github_insights": {
+      "enabled": true,
+      "metrics": [
+        "pull_requests",
+        "issues",
+        "commits",
+        "contributors",
+        "traffic",
+        "releases"
+      ]
+    }
+  },
+  "automation": {
+    "enabled": true,
+    "metrics_collection": {
+      "schedule": "0 6 * * *",
+      "enabled": true
+    },
+    "report_generation": {
+      "schedule": "0 9 * * 1",
+      "enabled": true,
+      "recipients": ["team@tiny-llm-profiler.com"]
+    },
+    "alerts": {
+      "slack_webhook": "${SLACK_WEBHOOK_URL}",
+      "email_notifications": true,
+      "threshold_alerts": true
+    }
+  },
+  "integrations": {
+    "github_api": {
+      "enabled": true,
+      "token_env": "GITHUB_TOKEN",
+      "rate_limit_aware": true
+    },
+    "prometheus": {
+      "enabled": true,
+      "endpoint": "http://localhost:9090",
+      "push_gateway": "http://localhost:9091"
+    },
+    "sonarqube": {
+      "enabled": false,
+      "server_url": "",
+      "project_key": "tiny-llm-edge-profiler"
+    },
+    "jira": {
+      "enabled": false,
+      "server_url": "",
+      "project_key": ""
+    }
+  },
+  "custom_metrics": {
+    "profiling_specific": {
+      "device_compatibility_score": {
+        "description": "Percentage of supported devices that pass profiling tests",
+        "threshold": 95,
+        "unit": "percentage"
+      },
+      "model_optimization_ratio": {
+        "description": "Average optimization improvement ratio across models",
+        "threshold": 1.5,
+        "unit": "ratio"
+      },
+      "edge_deployment_success_rate": {
+        "description": "Success rate of edge device deployments",
+        "threshold": 98,
+        "unit": "percentage"
+      },
+      "profiling_accuracy": {
+        "description": "Accuracy of profiling predictions vs actual performance",
+        "threshold": 92,
+        "unit": "percentage"
+      }
+    }
+  },
+  "reporting": {
+    "weekly_summary": {
+      "enabled": true,
+      "sections": [
+        "code_quality",
+        "performance",
+        "security",
+        "development_velocity",
+        "profiling_metrics"
+      ]
+    },
+    "monthly_trends": {
+      "enabled": true,
+      "trend_analysis": true,
+      "forecasting": true
+    },
+    "quarterly_review": {
+      "enabled": true,
+      "comprehensive_analysis": true,
+      "recommendations": true
+    }
+  }
+}
