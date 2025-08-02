@@ -1,0 +1,172 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Python cache and build artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environments
+venv/
+.venv/
+env/
+.env/
+ENV/
+env.bak/
+venv.bak/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.pydevproject
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+*.tmp
+*.temp
+
+# Test artifacts
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+junit.xml
+test-results/
+test-reports/
+
+# Linting and type checking
+.mypy_cache/
+.ruff_cache/
+.flake8_cache/
+.bandit
+.pytype/
+
+# Documentation build
+docs/_build/
+site/
+.mkdocs_cache/
+
+# Local development files
+.env
+.env.local
+.env.*.local
+*.log
+logs/
+temp/
+tmp/
+
+# Hardware test artifacts
+hardware-reports/
+benchmark-reports/
+quality-reports/
+
+# Node.js (if using for docs or tools)
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Platform specific
+*.dll
+*.exe
+*.bin
+*.hex
+*.elf
+
+# Backup files
+*.bak
+*.backup
+*.orig
+
+# Security sensitive files
+secrets/
+*.key
+*.pem
+*.cert
+*.crt
+*.p12
+*.pfx
+
+# Large files that shouldn't be in containers
+models/
+datasets/
+benchmarks/large/
+*.tar.gz
+*.zip
+*.7z
+
+# CI/CD artifacts that don't belong in containers
+.github/
+azure-pipelines.yml
+.gitlab-ci.yml
+.circleci/
+.travis.yml
+Jenkinsfile
+
+# Local configuration overrides
+docker-compose.override.yml
+docker-compose.local.yml
+.dockerignore
+
+# Hardware specific files that change
+/dev/
+firmware/compiled/
+hardware-configs/local/
+
+# Documentation source (keep only built docs in container)
+docs/source/
+*.md
+!README.md
+
+# Examples and demos (exclude from production builds)
+examples/
+demos/
+tutorials/
+
+# Development scripts
+scripts/dev/
+scripts/setup/
+scripts/local/
+
+# Monitoring and profiling outputs
+*.prof
+*.profile
+memory-profile/
+cpu-profile/

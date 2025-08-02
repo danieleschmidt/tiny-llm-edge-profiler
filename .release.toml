@@ -1,0 +1,54 @@
+# Release configuration for semantic-release
+# See: https://python-semantic-release.readthedocs.io/
+
+[semantic_release]
+version_toml = [
+    "pyproject.toml:project.version",
+]
+branch = "main"
+upload_to_pypi = false
+upload_to_release = true
+build_command = "pip install build && python -m build"
+dist_glob_patterns = ["dist/*"]
+
+[semantic_release.changelog]
+template_dir = "templates"
+changelog_file = "CHANGELOG.md"
+exclude_commit_patterns = [
+    "^docs:",
+    "^test:",
+    "^ci:",
+    "^build:",
+    "^chore:",
+    "^style:",
+    "^refactor:",
+]
+
+[semantic_release.changelog.environment]
+block_start_string = "{%"
+block_end_string = "%}"
+variable_start_string = "{{"
+variable_end_string = "}}"
+comment_start_string = "{#"
+comment_end_string = "#}"
+trim_blocks = false
+lstrip_blocks = false
+newline_sequence = "\n"
+keep_trailing_newline = false
+
+[semantic_release.commit_parser_options]
+allowed_tags = ["feat", "fix", "docs", "style", "ref", "test", "chore", "perf", "ci", "build"]
+minor_tags = ["feat", "perf"]
+patch_tags = ["fix", "docs", "style", "ref", "test", "chore", "ci", "build"]
+
+[semantic_release.remote]
+name = "origin"
+type = "github"
+ignore_token_for_push = false
+
+[semantic_release.remote.token]
+name = "GITHUB_TOKEN"
+
+[semantic_release.publish]
+dist_glob_patterns = ["dist/*"]
+upload_to_vcs_release = true

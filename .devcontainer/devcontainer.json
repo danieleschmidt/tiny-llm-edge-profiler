@@ -1,0 +1,229 @@
+{
+  "name": "Tiny LLM Edge Profiler Development",
+  "dockerComposeFile": "docker-compose.yml",
+  "service": "devcontainer",
+  "workspaceFolder": "/workspace",
+  "shutdownAction": "stopCompose",
+
+  // Features to install
+  "features": {
+    "ghcr.io/devcontainers/features/common-utils:2": {
+      "installZsh": true,
+      "configureZshAsDefaultShell": true,
+      "installOhMyZsh": true,
+      "upgradePackages": true,
+      "username": "vscode",
+      "userUid": "automatic",
+      "userGid": "automatic"
+    },
+    "ghcr.io/devcontainers/features/python:1": {
+      "version": "3.11",
+      "installTools": true,
+      "optimize": true
+    },
+    "ghcr.io/devcontainers/features/git:1": {
+      "ppa": true,
+      "version": "latest"
+    },
+    "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {
+      "version": "latest",
+      "enableNonRootDocker": "true",
+      "moby": "true"
+    },
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "lts",
+      "nodeGypDependencies": true,
+      "installYarnUsingApt": true
+    }
+  },
+
+  // Container environment variables
+  "containerEnv": {
+    "PYTHONPATH": "/workspace/src",
+    "TINY_PROFILER_DEV_MODE": "1",
+    "TINY_PROFILER_LOG_LEVEL": "DEBUG"
+  },
+
+  // VS Code extensions to install
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        // Python development
+        "ms-python.python",
+        "ms-python.flake8",
+        "ms-python.black-formatter",
+        "ms-python.isort",
+        "ms-python.mypy-type-checker",
+        "charliermarsh.ruff",
+        
+        // Testing
+        "ms-python.pytest",
+        "hbenl.vscode-test-explorer",
+        "littlefoxteam.vscode-python-test-adapter",
+        
+        // Git and GitHub
+        "github.vscode-pull-request-github",
+        "github.copilot",
+        "github.copilot-chat",
+        "eamodio.gitlens",
+        
+        // Documentation
+        "ms-python.docstring-generator",
+        "davidanson.vscode-markdownlint",
+        "yzhang.markdown-all-in-one",
+        
+        // Docker and containers
+        "ms-azuretools.vscode-docker",
+        "ms-vscode-remote.remote-containers",
+        
+        // YAML and configuration
+        "redhat.vscode-yaml",
+        "tamasfe.even-better-toml",
+        
+        // Hardware development
+        "platformio.platformio-ide",
+        "ms-vscode.cpptools",
+        "twxs.cmake",
+        
+        // General productivity
+        "ms-vscode.remote-explorer",
+        "gruntfuggly.todo-tree",
+        "streetsidesoftware.code-spell-checker",
+        "visualstudioexptteam.vscodeintellicode",
+        "ms-vsliveshare.vsliveshare"
+      ],
+      
+      "settings": {
+        // Python settings
+        "python.defaultInterpreterPath": "/usr/local/bin/python",
+        "python.linting.enabled": true,
+        "python.linting.pylintEnabled": false,
+        "python.linting.flake8Enabled": true,
+        "python.linting.mypyEnabled": true,
+        "python.formatting.provider": "black",
+        "python.formatting.blackArgs": ["--line-length=88"],
+        "python.sortImports.args": ["--profile=black"],
+        
+        // Testing settings
+        "python.testing.pytestEnabled": true,
+        "python.testing.unittestEnabled": false,
+        "python.testing.pytestArgs": [
+          "tests"
+        ],
+        
+        // Editor settings
+        "editor.formatOnSave": true,
+        "editor.formatOnPaste": true,
+        "editor.codeActionsOnSave": {
+          "source.organizeImports": true,
+          "source.fixAll.ruff": true
+        },
+        "editor.rulers": [88],
+        "editor.tabSize": 4,
+        "editor.insertSpaces": true,
+        
+        // File associations
+        "files.associations": {
+          "*.ino": "cpp",
+          "*.h": "c",
+          "*.c": "c"
+        },
+        
+        // Terminal settings
+        "terminal.integrated.defaultProfile.linux": "zsh",
+        "terminal.integrated.profiles.linux": {
+          "zsh": {
+            "path": "/bin/zsh"
+          }
+        },
+        
+        // Git settings
+        "git.autofetch": true,
+        "git.enableSmartCommit": true,
+        "git.confirmSync": false,
+        
+        // Markdown settings
+        "markdown.preview.fontSize": 14,
+        "markdown.preview.lineHeight": 1.6,
+        
+        // Spell checker settings
+        "cSpell.words": [
+          "microcontrollers",
+          "quantization",
+          "profiler",
+          "llm",
+          "esp32",
+          "stm32",
+          "rp2040",
+          "cortex",
+          "risc",
+          "xtensa",
+          "psram",
+          "gpio",
+          "uart",
+          "i2c",
+          "spi",
+          "pwm",
+          "adc",
+          "dac",
+          "rtos",
+          "freertos"
+        ]
+      }
+    }
+  },
+
+  // Port forwarding for development servers
+  "forwardPorts": [
+    8000,  // Development server
+    8080,  // Web UI
+    9090,  // Prometheus metrics
+    3000   // Documentation server
+  ],
+  "portsAttributes": {
+    "8000": {
+      "label": "Development Server",
+      "onAutoForward": "openPreview"
+    },
+    "8080": {
+      "label": "Web UI",
+      "onAutoForward": "openBrowser"
+    },
+    "9090": {
+      "label": "Prometheus Metrics",
+      "onAutoForward": "ignore"
+    },
+    "3000": {
+      "label": "Documentation",
+      "onAutoForward": "openPreview"
+    }
+  },
+
+  // Lifecycle scripts
+  "onCreateCommand": "pip install -e '.[dev,test]' && pre-commit install",
+  "postCreateCommand": [
+    "git config --global --add safe.directory /workspace",
+    "sudo chown -R vscode:vscode /workspace",
+    "chmod +x scripts/*.sh"
+  ],
+  "postStartCommand": "git status",
+
+  // Mount the Docker socket and hardware devices
+  "mounts": [
+    "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind",
+    "source=/dev,target=/dev,type=bind",
+    "source=${localWorkspaceFolder}/.vscode,target=/workspace/.vscode,type=bind"
+  ],
+
+  // Security and capabilities
+  "runArgs": [
+    "--privileged",
+    "--device-cgroup-rule=c 188:* rmw"  // USB device access
+  ],
+  "capAdd": [
+    "SYS_PTRACE"
+  ],
+
+  // Remote user
+  "remoteUser": "vscode"
+}

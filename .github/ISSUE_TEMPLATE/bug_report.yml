@@ -1,0 +1,70 @@
+name: Bug Report
+description: File a bug report to help us improve
+title: "[Bug]: "
+labels: ["bug", "triage"]
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this bug report!
+        
+  - type: input
+    id: platform
+    attributes:
+      label: Platform
+      description: Which platform/device are you using?
+      placeholder: "e.g., ESP32, STM32F7, RP2040"
+    validations:
+      required: true
+      
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Also tell us, what did you expect to happen?
+      placeholder: Tell us what you see!
+    validations:
+      required: true
+      
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to Reproduce
+      description: Please provide steps to reproduce the issue
+      placeholder: |
+        1. Load model '...'
+        2. Run profiler with '...'
+        3. See error
+    validations:
+      required: true
+      
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Please provide your environment details
+      render: shell
+      placeholder: |
+        - OS: [e.g. Ubuntu 22.04]
+        - Python version: [e.g. 3.9.0]
+        - Package version: [e.g. 1.0.0]
+        - Hardware: [e.g. ESP32-DevKitC]
+    validations:
+      required: true
+      
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant log output
+      description: Please copy and paste any relevant log output
+      render: shell
+      
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Code of Conduct
+      description: By submitting this issue, you agree to follow our Code of Conduct
+      options:
+        - label: I agree to follow this project's Code of Conduct
+          required: true
