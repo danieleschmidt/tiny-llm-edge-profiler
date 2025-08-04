@@ -1,9 +1,9 @@
 # tiny-llm-edge-profiler
 
-[![Build Status](https://img.shields.io/github/actions/workflow/status/your-org/tiny-llm-edge-profiler/ci.yml?branch=main)](https://github.com/your-org/tiny-llm-edge-profiler/actions)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/danieleschmidt/tiny-llm-edge-profiler/ci.yml?branch=main)](https://github.com/danieleschmidt/tiny-llm-edge-profiler/actions)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](LICENSE)
-[![Platforms](https://img.shields.io/badge/platforms-ARM%20|%20RISC--V%20|%20ESP32-green)](https://github.com/your-org/tiny-llm-edge-profiler)
-[![Models](https://img.shields.io/badge/models-2--bit%20|%204--bit%20|%20sub--5MB-orange)](https://github.com/your-org/tiny-llm-edge-profiler)
+[![Platforms](https://img.shields.io/badge/platforms-ARM%20|%20RISC--V%20|%20ESP32-green)](https://github.com/danieleschmidt/tiny-llm-edge-profiler)
+[![Models](https://img.shields.io/badge/models-2--bit%20|%204--bit%20|%20sub--5MB-orange)](https://github.com/danieleschmidt/tiny-llm-edge-profiler)
 
 Comprehensive profiling toolkit for running 2-bit/4-bit quantized LLMs on microcontrollers and edge devices. Measure real-world performance on ARM Cortex-M, RISC-V, ESP32, and more.
 
@@ -53,11 +53,11 @@ tiny-profiler generate-firmware --platform stm32f4 --output firmware.bin
 ### Docker Installation
 
 ```bash
-docker pull your-org/tiny-llm-profiler:latest
+docker pull danieleschmidt/tiny-llm-profiler:latest
 docker run -it --privileged \
   -v /dev:/dev \
   -v $(pwd):/workspace \
-  your-org/tiny-llm-profiler:latest
+  danieleschmidt/tiny-llm-profiler:latest
 ```
 
 ## ⚡ Quick Start
@@ -509,7 +509,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ```bash
 # Clone repository
-git clone https://github.com/your-org/tiny-llm-edge-profiler
+git clone https://github.com/danieleschmidt/tiny-llm-edge-profiler
 cd tiny-llm-edge-profiler
 
 # Install development dependencies
@@ -535,10 +535,10 @@ This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENS
 
 ## 📞 Support
 
-- 📧 Email: tiny-llm@your-org.com
-- 💬 Discord: [Join our community](https://discord.gg/your-org)
-- 📖 Documentation: [Full docs](https://docs.your-org.com/tiny-llm-profiler)
-- 🎓 Tutorial: [Edge AI Deployment](https://learn.your-org.com/edge-ai)
+- 📧 Email: tiny-llm@danieleschmidt.com
+- 💬 Discord: [Join our community](https://discord.gg/danieleschmidt)
+- 📖 Documentation: [Full docs](https://docs.danieleschmidt.com/tiny-llm-profiler)
+- 🎓 Tutorial: [Edge AI Deployment](https://learn.danieleschmidt.com/edge-ai)
 
 ## 📚 References
 
