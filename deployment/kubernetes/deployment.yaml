@@ -1,0 +1,376 @@
+# Kubernetes deployment configuration for Tiny LLM Edge Profiler
+# Production-ready deployment with auto-scaling and monitoring
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tiny-llm-profiler
+  namespace: profiler
+  labels:
+    app: tiny-llm-profiler
+    version: v0.1.0
+    tier: application
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: tiny-llm-profiler
+  template:
+    metadata:
+      labels:
+        app: tiny-llm-profiler
+        version: v0.1.0
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8081"
+        prometheus.io/path: "/metrics"
+    spec:
+      # Security context
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      
+      # Service account
+      serviceAccountName: tiny-llm-profiler
+      
+      # Node selector for nodes with device access
+      nodeSelector:
+        hardware.profiling/device-access: "true"
+      
+      # Tolerations for specialized nodes
+      tolerations:
+      - key: "hardware.profiling/dedicated"
+        operator: "Equal"
+        value: "true"
+        effect: "NoSchedule"
+      
+      containers:
+      - name: profiler
+        image: terragon-labs/tiny-llm-profiler:0.1.0
+        imagePullPolicy: IfNotPresent
+        
+        # Command and arguments
+        command: ["python", "-m", "tiny_llm_profiler.cli"]
+        args: ["--config", "/app/config/production.yaml"]
+        
+        # Environment variables
+        env:
+        - name: TINY_LLM_LOG_LEVEL
+          valueFrom:
+            configMapKeyRef:
+              name: profiler-config
+              key: log_level
+        - name: TINY_LLM_LOG_JSON
+          value: "true"
+        - name: TINY_LLM_REDIS_URL
+          valueFrom:
+            secretKeyRef:
+              name: profiler-secrets
+              key: redis_url
+        - name: TINY_LLM_SECURITY_VALIDATION
+          value: "true"
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        
+        # Ports
+        ports:
+        - name: http
+          containerPort: 8080
+          protocol: TCP
+        - name: metrics
+          containerPort: 8081
+          protocol: TCP
+        
+        # Resource limits and requests
+        resources:
+          limits:
+            memory: "2Gi"
+            cpu: "2000m"
+            ephemeral-storage: "10Gi"
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+            ephemeral-storage: "5Gi"
+        
+        # Volume mounts
+        volumeMounts:
+        - name: config
+          mountPath: /app/config
+          readOnly: true
+        - name: data
+          mountPath: /data
+        - name: cache
+          mountPath: /cache
+        - name: logs
+          mountPath: /logs
+        - name: device-access
+          mountPath: /dev
+        
+        # Health checks
+        livenessProbe:
+          httpGet:
+            path: /health/live
+            port: http
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+        
+        readinessProbe:
+          httpGet:
+            path: /health/ready
+            port: http
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        
+        # Startup probe for slower initialization
+        startupProbe:
+          httpGet:
+            path: /health/startup
+            port: http
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 12  # Allow 2 minutes for startup
+        
+        # Security context
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+            add:
+            - SYS_RAWIO  # For device access
+      
+      # Volumes
+      volumes:
+      - name: config
+        configMap:
+          name: profiler-config
+      - name: data
+        persistentVolumeClaim:
+          claimName: profiler-data
+      - name: cache
+        emptyDir:
+          sizeLimit: 5Gi
+      - name: logs
+        emptyDir:
+          sizeLimit: 2Gi
+      - name: device-access
+        hostPath:
+          path: /dev
+          type: Directory
+      
+      # Restart policy
+      restartPolicy: Always
+      
+      # Termination grace period
+      terminationGracePeriodSeconds: 30
+
+---
+# Horizontal Pod Autoscaler
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: tiny-llm-profiler-hpa
+  namespace: profiler
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: tiny-llm-profiler
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
+  - type: Pods
+    pods:
+      metric:
+        name: profiling_tasks_per_second
+      target:
+        type: AverageValue
+        averageValue: "5"
+
+---
+# Pod Disruption Budget
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: tiny-llm-profiler-pdb
+  namespace: profiler
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: tiny-llm-profiler
+
+---
+# Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: tiny-llm-profiler-service
+  namespace: profiler
+  labels:
+    app: tiny-llm-profiler
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8081"
+spec:
+  type: ClusterIP
+  ports:
+  - name: http
+    port: 8080
+    targetPort: http
+    protocol: TCP
+  - name: metrics
+    port: 8081
+    targetPort: metrics
+    protocol: TCP
+  selector:
+    app: tiny-llm-profiler
+
+---
+# Service Monitor for Prometheus
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: tiny-llm-profiler-metrics
+  namespace: profiler
+  labels:
+    app: tiny-llm-profiler
+spec:
+  selector:
+    matchLabels:
+      app: tiny-llm-profiler
+  endpoints:
+  - port: metrics
+    interval: 30s
+    path: /metrics
+    honorLabels: true
+
+---
+# ConfigMap
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: profiler-config
+  namespace: profiler
+data:
+  log_level: "INFO"
+  production.yaml: |
+    app_name: "tiny-llm-edge-profiler"
+    version: "0.1.0"
+    
+    profiling:
+      sample_rate_hz: 100
+      duration_seconds: 60
+      measurement_iterations: 10
+      warmup_iterations: 3
+      enable_power_profiling: false
+      enable_memory_profiling: true
+      enable_latency_profiling: true
+    
+    security:
+      enable_input_validation: true
+      enable_path_sanitization: true
+      max_file_size_mb: 100
+      require_model_validation: true
+    
+    logging:
+      level: "INFO"
+      console_output: true
+      json_format: true
+      performance_logging: true
+      security_logging: true
+    
+    output:
+      default_format: "json"
+      include_raw_data: false
+      compress_results: true
+      auto_timestamp: true
+
+---
+# Secret
+apiVersion: v1
+kind: Secret
+metadata:
+  name: profiler-secrets
+  namespace: profiler
+type: Opaque
+data:
+  redis_url: cmVkaXM6Ly86cGFzcword0ByZWRpcy1zZXJ2aWNlOjYzNzk=  # redis://:password@redis-service:6379
+
+---
+# PersistentVolumeClaim
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: profiler-data
+  namespace: profiler
+spec:
+  accessModes:
+  - ReadWriteMany
+  resources:
+    requests:
+      storage: 100Gi
+  storageClassName: fast-ssd
+
+---
+# ServiceAccount
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: tiny-llm-profiler
+  namespace: profiler
+
+---
+# ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: tiny-llm-profiler
+rules:
+- apiGroups: [""]
+  resources: ["nodes", "pods"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["metrics.k8s.io"]
+  resources: ["nodes", "pods"]
+  verbs: ["get", "list"]
+
+---
+# ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: tiny-llm-profiler
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: tiny-llm-profiler
+subjects:
+- kind: ServiceAccount
+  name: tiny-llm-profiler
+  namespace: profiler

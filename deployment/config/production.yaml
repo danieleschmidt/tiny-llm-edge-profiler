@@ -1,0 +1,112 @@
+# Production configuration for Tiny LLM Edge Profiler
+# Optimized for production deployment with security and performance
+
+app_name: "tiny-llm-edge-profiler"
+version: "0.1.0"
+
+# Profiling configuration - optimized for production workloads
+profiling:
+  sample_rate_hz: 100
+  duration_seconds: 60
+  measurement_iterations: 10
+  warmup_iterations: 3
+  timeout_seconds: 300
+  enable_power_profiling: false  # Disable by default for security
+  enable_memory_profiling: true
+  enable_latency_profiling: true
+  max_prompt_length: 10000
+  max_prompts: 100
+  default_quantization: "4bit"
+  default_context_length: 2048
+
+# Security configuration - strict production settings
+security:
+  enable_input_validation: true
+  enable_path_sanitization: true
+  max_file_size_mb: 100
+  allowed_model_extensions: [".gguf", ".ggml", ".bin", ".safetensors"]
+  enable_secure_temp_dirs: true
+  log_security_events: true
+  require_model_validation: true
+
+# Logging configuration - structured logging for production
+logging:
+  level: "INFO"
+  console_output: true
+  file_output: true
+  json_format: true
+  log_dir: "/logs"
+  max_file_size_mb: 50
+  backup_count: 10
+  performance_logging: true
+  security_logging: true
+
+# Output configuration - optimized for production
+output:
+  default_format: "json"
+  output_dir: "/data"
+  include_raw_data: false
+  compress_results: true
+  auto_timestamp: true
+  include_system_info: true
+
+# Platform-specific overrides for production
+platform_overrides:
+  esp32:
+    profiling:
+      sample_rate_hz: 50  # Lower for stability
+      timeout_seconds: 180
+    security:
+      max_file_size_mb: 50
+  
+  stm32f4:
+    profiling:
+      sample_rate_hz: 25  # Very conservative
+      timeout_seconds: 120
+      max_prompts: 50
+    security:
+      max_file_size_mb: 10  # Very limited
+  
+  stm32f7:
+    profiling:
+      sample_rate_hz: 50
+      timeout_seconds: 150
+    security:
+      max_file_size_mb: 25
+  
+  rp2040:
+    profiling:
+      sample_rate_hz: 30
+      timeout_seconds: 120
+      max_prompts: 75
+    security:
+      max_file_size_mb: 20
+  
+  jetson_nano:
+    profiling:
+      sample_rate_hz: 200  # Higher capability
+      duration_seconds: 120
+      enable_power_profiling: true
+    security:
+      max_file_size_mb: 500
+
+# Device defaults - production-ready settings
+device_defaults:
+  baudrate: 921600
+  timeout_seconds: 30
+  connection_retries: 3
+  retry_delay_seconds: 2
+
+# Model repository settings - production caching
+model_repository:
+  cache_dir: "/cache/models"
+  auto_download: false  # Security: disable auto-download
+  verify_checksums: true
+  max_cache_size_gb: 50
+
+# Experimental features - disabled for production stability
+experimental:
+  async_profiling: false
+  gpu_acceleration: false
+  distributed_profiling: false
+  model_optimization: true

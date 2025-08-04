@@ -1,0 +1,238 @@
+# Docker Compose configuration for Tiny LLM Edge Profiler
+# Production deployment with monitoring and data persistence
+
+version: '3.8'
+
+services:
+  # Main profiler application
+  tiny-llm-profiler:
+    build:
+      context: ../../
+      dockerfile: deployment/docker/Dockerfile
+    image: terragon-labs/tiny-llm-profiler:0.1.0
+    container_name: tiny-llm-profiler
+    restart: unless-stopped
+    
+    # Environment configuration
+    environment:
+      - TINY_LLM_LOG_LEVEL=INFO
+      - TINY_LLM_LOG_JSON=true
+      - TINY_LLM_LOG_DIR=/logs
+      - TINY_LLM_OUTPUT_DIR=/data
+      - TINY_LLM_MODEL_CACHE=/cache
+      - TINY_LLM_SECURITY_VALIDATION=true
+      - TINY_LLM_MAX_FILE_SIZE=100
+    
+    # Volume mounts for persistence
+    volumes:
+      - profiler_data:/data
+      - profiler_logs:/logs
+      - profiler_cache:/cache
+      - /dev:/dev  # Device access for hardware profiling
+      - ./config:/app/config:ro
+    
+    # Network configuration
+    ports:
+      - "8080:8080"  # Main API port
+      - "8081:8081"  # Metrics/monitoring port
+    
+    # Device access (for serial devices)
+    devices:
+      - /dev/ttyUSB0:/dev/ttyUSB0
+      - /dev/ttyACM0:/dev/ttyACM0
+    
+    # Security configuration
+    privileged: false
+    cap_add:
+      - SYS_RAWIO  # For device access
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '2'
+        reservations:
+          memory: 512M
+          cpus: '0.5'
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "python", "-c", "from tiny_llm_profiler.health import run_health_checks; exit(0 if run_health_checks() else 1)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    
+    # Logging configuration
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    
+    # Dependencies
+    depends_on:
+      - redis
+      - prometheus
+  
+  # Redis for caching and session storage
+  redis:
+    image: redis:7-alpine
+    container_name: tiny-llm-redis
+    restart: unless-stopped
+    
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-profiler_redis_pass}
+    
+    volumes:
+      - redis_data:/data
+    
+    ports:
+      - "6379:6379"
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.5'
+        reservations:
+          memory: 64M
+          cpus: '0.1'
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+  
+  # Prometheus for metrics collection
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: tiny-llm-prometheus
+    restart: unless-stopped
+    
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=7d'
+      - '--web.enable-lifecycle'
+    
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    
+    ports:
+      - "9090:9090"
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '1'
+        reservations:
+          memory: 128M
+          cpus: '0.2'
+  
+  # Grafana for visualization
+  grafana:
+    image: grafana/grafana:latest
+    container_name: tiny-llm-grafana
+    restart: unless-stopped
+    
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin_password}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SECURITY_DISABLE_GRAVATAR=true
+      - GF_ANALYTICS_REPORTING_ENABLED=false
+    
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources:ro
+    
+    ports:
+      - "3000:3000"
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.5'
+        reservations:
+          memory: 64M
+          cpus: '0.1'
+    
+    depends_on:
+      - prometheus
+  
+  # Log aggregation (optional)
+  loki:
+    image: grafana/loki:latest
+    container_name: tiny-llm-loki
+    restart: unless-stopped
+    
+    command: -config.file=/etc/loki/local-config.yaml
+    
+    volumes:
+      - ./monitoring/loki.yml:/etc/loki/local-config.yaml:ro
+      - loki_data:/loki
+    
+    ports:
+      - "3100:3100"
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.5'
+        reservations:
+          memory: 64M
+          cpus: '0.1'
+
+# Named volumes for data persistence
+volumes:
+  profiler_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./data
+  
+  profiler_logs:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./logs
+  
+  profiler_cache:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./cache
+  
+  redis_data:
+    driver: local
+  
+  prometheus_data:
+    driver: local
+  
+  grafana_data:
+    driver: local
+  
+  loki_data:
+    driver: local
+
+# Networks
+networks:
+  default:
+    name: tiny-llm-profiler
+    driver: bridge
