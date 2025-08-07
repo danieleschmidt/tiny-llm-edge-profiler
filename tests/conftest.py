@@ -129,6 +129,7 @@ def mock_quantized_model() -> Mock:
 def hardware_test_skip() -> Generator[None, None, None]:
     """Skip tests that require actual hardware when not available."""
     import sys
+    import os
     
     # Check if we're in a CI environment or hardware is not available
     if "CI" in os.environ or "--hardware" not in sys.argv:
