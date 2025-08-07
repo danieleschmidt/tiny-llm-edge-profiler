@@ -9,6 +9,7 @@ from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor, as_compl
 from typing import Dict, List, Optional, Any, Callable, TypeVar, Generic, Union, Iterator
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
+from enum import Enum
 import time
 import queue
 from pathlib import Path
@@ -23,6 +24,15 @@ logger = get_logger("concurrent")
 perf_logger = PerformanceLogger()
 
 T = TypeVar('T')
+
+
+class TaskStatus(str, Enum):
+    """Status of a profiling task."""
+    PENDING = "pending"
+    RUNNING = "running"
+    COMPLETED = "completed"
+    FAILED = "failed"
+    CANCELLED = "cancelled"
 
 
 @dataclass
