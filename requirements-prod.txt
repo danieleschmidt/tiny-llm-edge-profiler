@@ -1,0 +1,46 @@
+# Production dependencies for Tiny LLM Edge Profiler
+
+# Core dependencies (already in requirements.txt)
+# numpy>=1.21.0
+# pyserial>=3.5
+# psutil>=5.8.0
+# click>=8.0.0
+# rich>=12.0.0
+
+# Production-specific dependencies
+gunicorn>=20.1.0           # WSGI HTTP Server
+uvicorn[standard]>=0.18.0  # ASGI server for async support
+redis>=4.3.0               # Caching and session storage
+celery>=5.2.0              # Distributed task queue
+
+# Monitoring and observability
+prometheus-client>=0.14.0  # Metrics collection
+opentelemetry-api>=1.12.0  # Distributed tracing
+opentelemetry-sdk>=1.12.0
+opentelemetry-instrumentation>=0.33b0
+
+# Security
+cryptography>=37.0.0       # Encryption support
+PyJWT>=2.4.0              # JWT token handling
+bcrypt>=3.2.0             # Password hashing
+
+# Database and storage
+SQLAlchemy>=1.4.0         # ORM for result storage
+alembic>=1.8.0            # Database migrations
+asyncpg>=0.26.0           # PostgreSQL async driver
+
+# API and web interface
+fastapi>=0.78.0           # Modern web framework
+pydantic>=1.9.0           # Data validation
+httpx>=0.23.0             # HTTP client
+
+# Production utilities
+python-multipart>=0.0.5   # File upload support
+python-json-logger>=2.0.0 # Structured logging
+schedule>=1.1.0           # Job scheduling
+limits>=2.6.0             # Rate limiting
+
+# Optional performance enhancements
+msgpack>=1.0.0            # Fast serialization
+ujson>=5.0.0              # Fast JSON parsing
+orjson>=3.7.0             # Fastest JSON library

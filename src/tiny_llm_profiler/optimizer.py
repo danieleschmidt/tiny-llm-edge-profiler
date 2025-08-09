@@ -96,7 +96,55 @@ class EnergyOptimizer:
             for voltage in voltage_range:
                 # Estimate performance at this configuration
                 performance_scaling = freq / config["max_freq_mhz"]
-                estimated_tps = model.estimated_tokens_per_second * performance_scaling
+                # Estimate performance based on frequency scaling
+                estimated_tps = 10.0 * performance_scaling  # Simplified estimation
+                estimated_latency = 100.0 / performance_scaling  # Simplified estimation
+                
+                # Check constraints
+                meets_constraints = True
+                if "min_tokens_per_second" in constraints:
+                    if estimated_tps < constraints["min_tokens_per_second"]:
+                        meets_constraints = False
+                        
+                if "max_latency_ms" in constraints:
+                    if estimated_latency > constraints["max_latency_ms"]:
+                        meets_constraints = False
+                
+                if not meets_constraints:
+                    continue
+                
+                # Calculate energy metrics
+                power_mw = config["power_curves"](freq, voltage)
+                energy_per_token = power_mw / (estimated_tps * 1000)  # mJ per token
+                
+                # Score based on optimization target
+                if optimize_for == "energy_per_token":
+                    score = energy_per_token
+                elif optimize_for == "total_energy":
+                    score = power_mw
+                else:  # power_consumption
+                    score = power_mw
+                
+                if score < best_score:
+                    best_score = score
+                    baseline_energy = config["power_curves"](config["max_freq_mhz"], config["voltage_range"][1])
+                    energy_reduction = 1.0 - (power_mw / baseline_energy)
+                    
+                    best_config = OptimalConfiguration(
+                        cpu_freq_mhz=int(freq),
+                        voltage_v=voltage,
+                        memory_config={"use_cache_optimization": True},
+                        energy_reduction=energy_reduction,
+                        performance_impact=1.0 - performance_scaling
+                    )
+        
+        return best_config or OptimalConfiguration(
+            cpu_freq_mhz=config["max_freq_mhz"],
+            voltage_v=config["voltage_range"][1],
+            memory_config={},
+            energy_reduction=0.0,
+            performance_impact=0.0
+        )
                 
                 # Check constraints
                 if "min_tokens_per_second" in constraints:

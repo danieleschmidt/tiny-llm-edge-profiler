@@ -47,147 +47,128 @@ class BenchmarkResult:
     success: bool = True
     error_message: Optional[str] = None
     timestamp: float = 0.0
-    
-    def __post_init__(self):
-        if self.timestamp == 0.0:
-            self.timestamp = time.time()
 
 
 class StandardBenchmarks:
-    """Standard benchmark suite for TinyML LLM performance."""
+    """Standard benchmark suite for edge LLM evaluation."""
     
     def __init__(self):
-        self.tasks = self._initialize_benchmark_tasks()
-        self.results: List[BenchmarkResult] = []
+        """Initialize with standard benchmark tasks."""
+        self.benchmark_tasks = self._create_standard_tasks()
+        self.results_history: List[BenchmarkResult] = []
     
-    def _initialize_benchmark_tasks(self) -> Dict[str, BenchmarkTask]:
-        """Initialize standard benchmark tasks."""
-        return {
-            "text_generation": BenchmarkTask(
+    def _create_standard_tasks(self) -> List[BenchmarkTask]:
+        """Create standard benchmark tasks."""
+        return [
+            BenchmarkTask(
                 name="text_generation",
                 prompts=[
-                    "The future of artificial intelligence is",
-                    "Write a short story about a robot",
-                    "Explain quantum computing in simple terms",
-                    "List the benefits of renewable energy",
+                    "Write a simple Python function to calculate fibonacci numbers",
+                    "Explain how neural networks work in simple terms",
+                    "Create a shopping list for a healthy dinner",
+                    "Write a short poem about artificial intelligence",
                     "Describe the process of photosynthesis"
                 ],
-                expected_output_length=50,
-                description="General text generation capability"
+                expected_output_length=100,
+                description="General text generation benchmark"
             ),
             
-            "summarization": BenchmarkTask(
+            BenchmarkTask(
+                name="code_generation", 
+                prompts=[
+                    "def binary_search(arr, target):",
+                    "class LinkedList:",
+                    "# Sort a list of numbers\ndef sort_numbers(numbers):",
+                    "import json\n# Parse JSON data",
+                    "# Calculate factorial recursively\ndef factorial(n):"
+                ],
+                expected_output_length=50,
+                description="Code generation and completion"
+            ),
+            
+            BenchmarkTask(
+                name="question_answering",
+                prompts=[
+                    "What is the capital of France?",
+                    "How do computers process information?",
+                    "What are the benefits of renewable energy?", 
+                    "Explain the water cycle",
+                    "What is machine learning?"
+                ],
+                expected_output_length=75,
+                description="Question answering benchmark"
+            ),
+            
+            BenchmarkTask(
                 name="summarization",
                 prompts=[
-                    "Summarize: Climate change refers to long-term shifts in global temperatures and weather patterns. While climate changes are natural, since the 1800s, human activities have been the main driver of climate change, primarily due to the burning of fossil fuels like coal, oil and gas.",
-                    "Summarize: Artificial intelligence (AI) is intelligence demonstrated by machines, in contrast to the natural intelligence displayed by humans and animals. Leading AI textbooks define the field as the study of intelligent agents.",
-                    "Summarize: The Internet is a global system of interconnected computer networks that uses the Internet protocol suite to communicate between networks and devices."
+                    "Summarize this text: Artificial intelligence (AI) is intelligence demonstrated by machines, in contrast to natural intelligence displayed by humans and animals. Leading AI textbooks define the field as the study of \"intelligent agents\": any device that perceives its environment and takes actions that maximize its chance of successfully achieving its goals.",
+                    "Summarize: Climate change refers to long-term shifts in global temperatures and weather patterns. While climate change is a natural phenomenon, scientific evidence shows that human activities have been the main driver since the 1800s.",
+                    "Summarize: The Internet is a global system of interconnected computer networks that use the Internet protocol suite to link devices worldwide."
                 ],
                 expected_output_length=30,
-                description="Text summarization task"
+                description="Text summarization benchmark"
             ),
             
-            "qa": BenchmarkTask(
-                name="qa",
+            BenchmarkTask(
+                name="edge_specific",
                 prompts=[
-                    "Q: What is the capital of France? A:",
-                    "Q: How many legs does a spider have? A:",
-                    "Q: What is 2 + 2? A:",
-                    "Q: What is the largest ocean on Earth? A:",
-                    "Q: Who wrote Romeo and Juliet? A:"
+                    "Optimize this code for low memory usage",
+                    "How to reduce power consumption in embedded systems?",
+                    "List 3 ways to make this algorithm faster on microcontrollers",
+                    "Explain quantization in neural networks",
+                    "What are the challenges of running AI on edge devices?"
                 ],
-                expected_output_length=10,
-                description="Question answering task"
-            ),
-            
-            "code_generation": BenchmarkTask(
-                name="code_generation",
-                prompts=[
-                    "Write a Python function to calculate factorial",
-                    "Create a JavaScript function to reverse a string",
-                    "Write a C function to find the maximum in an array",
-                    "Python code to sort a list of numbers",
-                    "Function to check if a number is prime"
-                ],
-                expected_output_length=80,
-                description="Code generation capability"
-            ),
-            
-            "reasoning": BenchmarkTask(
-                name="reasoning",
-                prompts=[
-                    "If it takes 5 machines 5 minutes to make 5 widgets, how long would it take 100 machines to make 100 widgets?",
-                    "A farmer has 17 sheep and all but 9 die. How many are left?",
-                    "If a red house is made of red bricks and a yellow house is made of yellow bricks, what is a greenhouse made of?",
-                    "What comes next in the sequence: 2, 4, 8, 16, ?",
-                    "If you're running in a race and pass the person in second place, what place are you in?"
-                ],
-                expected_output_length=40,
-                description="Logical reasoning tasks"
+                expected_output_length=60,
+                description="Edge computing and optimization specific tasks"
             )
-        }
+        ]
     
     def run_tiny_ml_perf(
         self,
         models: List[str],
-        platforms: List[str],
+        platforms: List[str], 
         tasks: Optional[List[str]] = None,
-        config: Optional[ProfilingConfig] = None,
-        parallel: bool = True,
-        max_workers: int = 4
-    ) -> List[BenchmarkResult]:
+        output_file: Optional[str] = None
+    ) -> Dict[str, Any]:
         """
-        Run TinyML performance benchmarks.
+        Run TinyML performance benchmark suite.
         
         Args:
-            models: List of model names/paths to benchmark
-            platforms: List of platforms to test on
-            tasks: List of task names (if None, runs all tasks)
-            config: Profiling configuration
-            parallel: Whether to run benchmarks in parallel
-            max_workers: Maximum number of parallel workers
+            models: List of model paths or names to benchmark
+            platforms: List of target platforms
+            tasks: List of task names to run (default: all tasks)
+            output_file: Output file for results
             
         Returns:
-            List of BenchmarkResult objects
+            Dictionary with benchmark results
         """
-        tasks = tasks or list(self.tasks.keys())
-        config = config or ProfilingConfig(
-            measurement_iterations=3,
-            warmup_iterations=1
-        )
+        if tasks is None:
+            tasks = [task.name for task in self.benchmark_tasks]
         
-        benchmark_configs = []
-        for model_name in models:
+        benchmark_results = []
+        total_combinations = len(models) * len(platforms) * len(tasks)
+        current = 0
+        
+        print(f"Running {total_combinations} benchmark combinations...")
+        
+        for model_path in models:
             for platform in platforms:
                 for task_name in tasks:
-                    benchmark_configs.append((model_name, platform, task_name))
-        
-        results = []
-        
-        if parallel and len(benchmark_configs) > 1:
-            # Run benchmarks in parallel
-            with ThreadPoolExecutor(max_workers=max_workers) as executor:
-                future_to_config = {
-                    executor.submit(
-                        self._run_single_benchmark,
-                        model_name, platform, task_name, config
-                    ): (model_name, platform, task_name)
-                    for model_name, platform, task_name in benchmark_configs
-                }
-                
-                for future in as_completed(future_to_config):
-                    config_info = future_to_config[future]
+                    current += 1
+                    print(f"[{current}/{total_combinations}] {task_name} - {platform} - {Path(model_path).name}")
+                    
                     try:
-                        result = future.result()
-                        results.append(result)
-                        print(f"Completed benchmark: {config_info}")
-                    except Exception as exc:
-                        print(f"Benchmark {config_info} generated exception: {exc}")
-                        # Create failed result
-                        results.append(BenchmarkResult(
-                            task_name=config_info[2],
-                            model_name=config_info[0],
-                            platform=config_info[1],
+                        result = self._run_single_benchmark(model_path, platform, task_name)
+                        benchmark_results.append(result)
+                        self.results_history.append(result)
+                    
+                    except Exception as e:
+                        print(f"  ✗ Failed: {e}")
+                        error_result = BenchmarkResult(
+                            task_name=task_name,
+                            model_name=Path(model_path).name,
+                            platform=platform,
                             quantization="unknown",
                             tokens_per_second=0.0,
                             first_token_latency_ms=0.0,
@@ -195,305 +176,285 @@ class StandardBenchmarks:
                             peak_memory_kb=0.0,
                             energy_per_token_mj=0.0,
                             success=False,
-                            error_message=str(exc)
-                        ))
-        else:
-            # Run benchmarks sequentially
-            for model_name, platform, task_name in benchmark_configs:
-                try:
-                    result = self._run_single_benchmark(model_name, platform, task_name, config)
-                    results.append(result)
-                    print(f"Completed benchmark: {model_name} on {platform} for {task_name}")
-                except Exception as exc:
-                    print(f"Benchmark failed: {exc}")
-                    results.append(BenchmarkResult(
-                        task_name=task_name,
-                        model_name=model_name,
-                        platform=platform,
-                        quantization="unknown",
-                        tokens_per_second=0.0,
-                        first_token_latency_ms=0.0,
-                        total_latency_ms=0.0,
-                        peak_memory_kb=0.0,
-                        energy_per_token_mj=0.0,
-                        success=False,
-                        error_message=str(exc)
-                    ))
+                            error_message=str(e),
+                            timestamp=time.time()
+                        )
+                        benchmark_results.append(error_result)
         
-        self.results.extend(results)
+        # Create comprehensive results
+        results = {
+            "benchmark_suite": "TinyML Performance v1.0",
+            "timestamp": time.time(),
+            "total_tests": len(benchmark_results),
+            "successful_tests": sum(1 for r in benchmark_results if r.success),
+            "results": [asdict(r) for r in benchmark_results],
+            "summary": self._generate_summary(benchmark_results)
+        }
+        
+        # Save results if output file specified
+        if output_file:
+            with open(output_file, 'w') as f:
+                json.dump(results, f, indent=2)
+            print(f"Results saved to {output_file}")
+        
         return results
     
     def _run_single_benchmark(
-        self,
-        model_name: str,
-        platform: str,
-        task_name: str,
-        config: ProfilingConfig
+        self, 
+        model_path: str, 
+        platform: str, 
+        task_name: str
     ) -> BenchmarkResult:
-        """Run a single benchmark configuration."""
-        task = self.tasks[task_name]
+        """Run a single benchmark combination."""
+        # Find the benchmark task
+        task = next((t for t in self.benchmark_tasks if t.name == task_name), None)
+        if not task:
+            raise ValueError(f"Unknown benchmark task: {task_name}")
         
-        # Create model (simplified - in real implementation would load actual model)
-        model = QuantizedModel(
-            name=model_name,
-            size_mb=self._estimate_model_size(model_name),
-            quantization=self._extract_quantization(model_name)
-        )
+        # Load model
+        model = QuantizedModel.from_file(model_path)
         
         # Initialize profiler
-        profiler = EdgeProfiler(
-            platform=platform,
-            device=self._get_platform_device(platform),
-            connection="local" if platform in ["rpi_zero", "jetson_nano"] else "serial"
+        profiler = EdgeProfiler(platform=platform, connection="local")
+        
+        # Configure profiling
+        config = ProfilingConfig(
+            measurement_iterations=3,  # Fewer iterations for benchmarking
+            warmup_iterations=1,
+            timeout_seconds=task.timeout_seconds
         )
         
+        # Run profiling
+        start_time = time.time()
+        
         try:
-            # Run profiling
-            profile_results = profiler.profile_model(
-                model=model,
-                test_prompts=task.prompts,
-                metrics=["latency", "memory", "power"],
-                config=config
-            )
+            with profiler:
+                results = profiler.profile_model(
+                    model=model,
+                    test_prompts=task.prompts[:3],  # Use first 3 prompts
+                    metrics=["latency", "memory", "power"],
+                    config=config
+                )
             
-            # Extract metrics for benchmark result
+            # Extract metrics
             tokens_per_second = 0.0
             first_token_latency = 0.0
             total_latency = 0.0
             peak_memory = 0.0
             energy_per_token = 0.0
             
-            if profile_results.latency_profile:
-                tokens_per_second = profile_results.latency_profile.tokens_per_second
-                first_token_latency = profile_results.latency_profile.first_token_latency_ms
-                total_latency = profile_results.latency_profile.total_latency_ms
+            if results.latency_profile:
+                tokens_per_second = results.latency_profile.tokens_per_second
+                first_token_latency = results.latency_profile.first_token_latency_ms
+                total_latency = results.latency_profile.total_latency_ms
             
-            if profile_results.memory_profile:
-                peak_memory = profile_results.memory_profile.peak_memory_kb
+            if results.memory_profile:
+                peak_memory = results.memory_profile.peak_memory_kb
             
-            if profile_results.power_profile:
-                energy_per_token = profile_results.power_profile.energy_per_token_mj
+            if results.power_profile:
+                energy_per_token = results.power_profile.energy_per_token_mj
             
             return BenchmarkResult(
                 task_name=task_name,
-                model_name=model_name,
+                model_name=model.name,
                 platform=platform,
-                quantization=model.quantization,
+                quantization=model.quantization.value,
                 tokens_per_second=tokens_per_second,
                 first_token_latency_ms=first_token_latency,
                 total_latency_ms=total_latency,
                 peak_memory_kb=peak_memory,
                 energy_per_token_mj=energy_per_token,
-                success=True
+                success=True,
+                timestamp=start_time
             )
             
         except Exception as e:
             return BenchmarkResult(
                 task_name=task_name,
-                model_name=model_name,
+                model_name=Path(model_path).name,
                 platform=platform,
-                quantization=model.quantization,
+                quantization="unknown",
                 tokens_per_second=0.0,
                 first_token_latency_ms=0.0,
                 total_latency_ms=0.0,
                 peak_memory_kb=0.0,
                 energy_per_token_mj=0.0,
                 success=False,
-                error_message=str(e)
+                error_message=str(e),
+                timestamp=start_time
             )
     
-    def _estimate_model_size(self, model_name: str) -> float:
-        """Estimate model size based on name."""
-        # Simple heuristics based on model name
-        if "125m" in model_name.lower():
-            return 0.5
-        elif "350m" in model_name.lower():
-            return 1.4
-        elif "1b" in model_name.lower() or "1.1b" in model_name.lower():
-            return 2.8
-        elif "7b" in model_name.lower():
-            return 14.0
-        else:
-            return 2.0  # Default size
-    
-    def _extract_quantization(self, model_name: str) -> str:
-        """Extract quantization info from model name."""
-        if "2bit" in model_name.lower():
-            return "2bit"
-        elif "3bit" in model_name.lower():
-            return "3bit"
-        elif "4bit" in model_name.lower():
-            return "4bit"
-        elif "8bit" in model_name.lower():
-            return "8bit"
-        else:
-            return "4bit"  # Default quantization
-    
-    def _get_platform_device(self, platform: str) -> Optional[str]:
-        """Get default device path for platform."""
-        device_map = {
-            "esp32": "/dev/ttyUSB0",
-            "stm32f4": "/dev/ttyACM0",
-            "stm32f7": "/dev/ttyACM0",
-            "rp2040": "/dev/ttyACM1",
-            "rpi_zero": None,
-            "jetson_nano": None
-        }
-        return device_map.get(platform)
-    
-    def create_leaderboard(self, results: List[BenchmarkResult], output_path: str):
-        """Create performance leaderboard from benchmark results."""
+    def _generate_summary(self, results: List[BenchmarkResult]) -> Dict[str, Any]:
+        """Generate summary statistics from benchmark results."""
         if not results:
-            return
+            return {}
         
-        # Group results by task
-        task_results = {}
-        for result in results:
-            if result.success:
-                if result.task_name not in task_results:
-                    task_results[result.task_name] = []
-                task_results[result.task_name].append(result)
-        
-        # Generate markdown leaderboard
-        markdown_content = ["# TinyML LLM Benchmark Leaderboard\n"]
-        markdown_content.append(f"Generated: {time.strftime('%Y-%m-%d %H:%M:%S')}\n\n")
-        
-        for task_name, task_results_list in task_results.items():
-            markdown_content.append(f"## {task_name.replace('_', ' ').title()}\n")
-            
-            # Sort by performance score
-            sorted_results = sorted(
-                task_results_list,
-                key=lambda x: self._calculate_performance_score(x),
-                reverse=True
-            )
-            
-            # Create table
-            headers = ["Rank", "Model", "Platform", "Quantization", "Tokens/sec", 
-                      "First Token (ms)", "Memory (KB)", "Energy (mJ/token)", "Score"]
-            
-            markdown_content.append("| " + " | ".join(headers) + " |")
-            markdown_content.append("|" + "|".join([" --- " for _ in headers]) + "|")
-            
-            for i, result in enumerate(sorted_results, 1):
-                score = self._calculate_performance_score(result)
-                row = [
-                    str(i),
-                    result.model_name,
-                    result.platform,
-                    result.quantization,
-                    f"{result.tokens_per_second:.2f}",
-                    f"{result.first_token_latency_ms:.1f}",
-                    f"{result.peak_memory_kb:.1f}",
-                    f"{result.energy_per_token_mj:.2f}",
-                    f"{score:.2f}"
-                ]
-                markdown_content.append("| " + " | ".join(row) + " |")
-            
-            markdown_content.append("\n")
-        
-        # Write to file
-        with open(output_path, 'w') as f:
-            f.write("\n".join(markdown_content))
-    
-    def _calculate_performance_score(self, result: BenchmarkResult) -> float:
-        """Calculate composite performance score."""
-        if not result.success:
-            return 0.0
-        
-        score = 0.0
-        weight_sum = 0.0
-        
-        # Throughput component (higher is better)
-        if result.tokens_per_second > 0:
-            score += result.tokens_per_second * 0.4
-            weight_sum += 0.4
-        
-        # Latency component (lower is better, invert)
-        if result.first_token_latency_ms > 0:
-            latency_score = 1000.0 / result.first_token_latency_ms
-            score += latency_score * 0.3
-            weight_sum += 0.3
-        
-        # Memory efficiency (lower is better, invert)
-        if result.peak_memory_kb > 0:
-            memory_score = 1000.0 / result.peak_memory_kb
-            score += memory_score * 0.2
-            weight_sum += 0.2
-        
-        # Energy efficiency (lower is better, invert)
-        if result.energy_per_token_mj > 0:
-            energy_score = 10.0 / result.energy_per_token_mj
-            score += energy_score * 0.1
-            weight_sum += 0.1
-        
-        return score / weight_sum if weight_sum > 0 else 0.0
-    
-    def export_results(self, output_path: str, format: str = "json"):
-        """Export benchmark results to file."""
-        if format == "json":
-            results_data = [asdict(result) for result in self.results]
-            with open(output_path, 'w') as f:
-                json.dump(results_data, f, indent=2)
-        
-        elif format == "csv":
-            import csv
-            
-            if self.results:
-                fieldnames = list(asdict(self.results[0]).keys())
-                with open(output_path, 'w', newline='') as csvfile:
-                    writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-                    writer.writeheader()
-                    for result in self.results:
-                        writer.writerow(asdict(result))
-    
-    def analyze_results(self) -> Dict[str, Any]:
-        """Analyze benchmark results and provide insights."""
-        if not self.results:
-            return {"error": "No results to analyze"}
-        
-        successful_results = [r for r in self.results if r.success]
+        successful_results = [r for r in results if r.success]
         
         if not successful_results:
             return {"error": "No successful benchmark runs"}
         
-        analysis = {
-            "total_benchmarks": len(self.results),
-            "successful_benchmarks": len(successful_results),
-            "success_rate": len(successful_results) / len(self.results),
-            "platforms_tested": list(set(r.platform for r in successful_results)),
-            "models_tested": list(set(r.model_name for r in successful_results)),
-            "tasks_tested": list(set(r.task_name for r in successful_results)),
+        # Platform performance summary
+        platform_stats = {}
+        for platform in set(r.platform for r in successful_results):
+            platform_results = [r for r in successful_results if r.platform == platform]
+            
+            platform_stats[platform] = {
+                "count": len(platform_results),
+                "avg_tokens_per_second": statistics.mean(r.tokens_per_second for r in platform_results),
+                "avg_first_token_latency": statistics.mean(r.first_token_latency_ms for r in platform_results),
+                "avg_peak_memory_kb": statistics.mean(r.peak_memory_kb for r in platform_results),
+                "avg_energy_per_token": statistics.mean(r.energy_per_token_mj for r in platform_results)
+            }
+        
+        # Model performance summary
+        model_stats = {}
+        for model in set(r.model_name for r in successful_results):
+            model_results = [r for r in successful_results if r.model_name == model]
+            
+            model_stats[model] = {
+                "count": len(model_results),
+                "avg_tokens_per_second": statistics.mean(r.tokens_per_second for r in model_results),
+                "avg_peak_memory_kb": statistics.mean(r.peak_memory_kb for r in model_results),
+                "quantization": model_results[0].quantization if model_results else "unknown"
+            }
+        
+        # Overall statistics
+        overall_stats = {
+            "total_successful_runs": len(successful_results),
+            "avg_tokens_per_second": statistics.mean(r.tokens_per_second for r in successful_results),
+            "median_tokens_per_second": statistics.median(r.tokens_per_second for r in successful_results),
+            "best_performance": {
+                "tokens_per_second": max(r.tokens_per_second for r in successful_results),
+                "model": max(successful_results, key=lambda r: r.tokens_per_second).model_name,
+                "platform": max(successful_results, key=lambda r: r.tokens_per_second).platform
+            },
+            "most_memory_efficient": {
+                "peak_memory_kb": min(r.peak_memory_kb for r in successful_results if r.peak_memory_kb > 0),
+                "model": min(successful_results, key=lambda r: r.peak_memory_kb if r.peak_memory_kb > 0 else float('inf')).model_name,
+                "platform": min(successful_results, key=lambda r: r.peak_memory_kb if r.peak_memory_kb > 0 else float('inf')).platform
+            }
         }
         
-        # Performance statistics
-        tokens_per_sec = [r.tokens_per_second for r in successful_results if r.tokens_per_second > 0]
-        if tokens_per_sec:
-            analysis["performance_stats"] = {
-                "avg_tokens_per_second": statistics.mean(tokens_per_sec),
-                "max_tokens_per_second": max(tokens_per_sec),
-                "min_tokens_per_second": min(tokens_per_sec),
-                "median_tokens_per_second": statistics.median(tokens_per_sec)
-            }
+        return {
+            "overall": overall_stats,
+            "by_platform": platform_stats,
+            "by_model": model_stats
+        }
+    
+    def create_leaderboard(self, results: Dict[str, Any], output_file: str):
+        """Create markdown leaderboard from benchmark results."""
+        if "summary" not in results:
+            print("No summary data available for leaderboard")
+            return
         
-        # Memory statistics
-        memory_usage = [r.peak_memory_kb for r in successful_results if r.peak_memory_kb > 0]
-        if memory_usage:
-            analysis["memory_stats"] = {
-                "avg_peak_memory_kb": statistics.mean(memory_usage),
-                "max_peak_memory_kb": max(memory_usage),
-                "min_peak_memory_kb": min(memory_usage),
-                "median_peak_memory_kb": statistics.median(memory_usage)
-            }
+        summary = results["summary"]
         
-        # Find best performers
-        if successful_results:
-            best_performer = max(successful_results, key=self._calculate_performance_score)
-            analysis["best_performer"] = {
-                "model": best_performer.model_name,
-                "platform": best_performer.platform,
-                "task": best_performer.task_name,
-                "score": self._calculate_performance_score(best_performer)
-            }
+        # Create markdown content
+        markdown_content = [
+            "# TinyML Edge Profiler Benchmark Results",
+            "",
+            f"Generated on: {time.strftime('%Y-%m-%d %H:%M:%S')}",
+            f"Total Tests: {results['total_tests']}",
+            f"Successful Tests: {results['successful_tests']}",
+            "",
+            "## Overall Performance Leaders",
+            ""
+        ]
         
-        return analysis
+        if "overall" in summary:
+            overall = summary["overall"]
+            markdown_content.extend([
+                f"**Best Performance:** {overall['best_performance']['tokens_per_second']:.1f} tok/s",
+                f"- Model: {overall['best_performance']['model']}",
+                f"- Platform: {overall['best_performance']['platform']}",
+                "",
+                f"**Most Memory Efficient:** {overall['most_memory_efficient']['peak_memory_kb']:.0f} KB peak",
+                f"- Model: {overall['most_memory_efficient']['model']}",
+                f"- Platform: {overall['most_memory_efficient']['platform']}",
+                ""
+            ])
+        
+        # Platform comparison table
+        if "by_platform" in summary:
+            markdown_content.extend([
+                "## Platform Performance Comparison",
+                "",
+                "| Platform | Avg Tok/s | Avg First Token (ms) | Avg Memory (KB) | Avg Energy (mJ/tok) |",
+                "|----------|-----------|----------------------|-----------------|-------------------|"
+            ])
+            
+            for platform, stats in summary["by_platform"].items():
+                markdown_content.append(
+                    f"| {platform} | {stats['avg_tokens_per_second']:.1f} | "
+                    f"{stats['avg_first_token_latency']:.1f} | "
+                    f"{stats['avg_peak_memory_kb']:.0f} | "
+                    f"{stats['avg_energy_per_token']:.2f} |"
+                )
+            
+            markdown_content.append("")
+        
+        # Model comparison table
+        if "by_model" in summary:
+            markdown_content.extend([
+                "## Model Performance Comparison",
+                "",
+                "| Model | Quantization | Avg Tok/s | Avg Memory (KB) |",
+                "|-------|--------------|-----------|-----------------|"
+            ])
+            
+            for model, stats in summary["by_model"].items():
+                markdown_content.append(
+                    f"| {model} | {stats['quantization']} | "
+                    f"{stats['avg_tokens_per_second']:.1f} | "
+                    f"{stats['avg_peak_memory_kb']:.0f} |"
+                )
+        
+        # Write to file
+        with open(output_file, 'w') as f:
+            f.write('\n'.join(markdown_content))
+        
+        print(f"Leaderboard saved to {output_file}")
+    
+    def compare_models(
+        self,
+        model_paths: List[str],
+        platform: str,
+        tasks: Optional[List[str]] = None
+    ) -> Dict[str, Any]:
+        """Compare multiple models on a single platform."""
+        if tasks is None:
+            tasks = [task.name for task in self.benchmark_tasks]
+        
+        comparison_results = []
+        
+        for model_path in model_paths:
+            model_results = {}
+            
+            for task_name in tasks:
+                try:
+                    result = self._run_single_benchmark(model_path, platform, task_name)
+                    model_results[task_name] = result
+                except Exception as e:
+                    print(f"Failed to benchmark {model_path} on {task_name}: {e}")
+            
+            comparison_results.append({
+                "model_path": model_path,
+                "model_name": Path(model_path).name,
+                "results": model_results
+            })
+        
+        return {
+            "platform": platform,
+            "models": comparison_results,
+            "timestamp": time.time()
+        }
+    
+    def get_task_names(self) -> List[str]:
+        """Get list of available benchmark task names."""
+        return [task.name for task in self.benchmark_tasks]
+    
+    def get_task_description(self, task_name: str) -> str:
+        """Get description of a specific benchmark task."""
+        task = next((t for t in self.benchmark_tasks if t.name == task_name), None)
+        return task.description if task else "Task not found"

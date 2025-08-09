@@ -1,0 +1,131 @@
+version: '3.8'
+
+services:
+  tiny-llm-profiler:
+    image: tiny-llm-profiler:${VERSION:-latest}
+    container_name: tiny-llm-profiler-prod
+    restart: unless-stopped
+    
+    environment:
+      - TINY_LLM_ENV=production
+      - TINY_LLM_LOG_LEVEL=INFO
+      - TINY_LLM_LOG_JSON=true
+      - TINY_LLM_CACHE_SIZE_MB=200
+      - TINY_LLM_MAX_CONCURRENT_TASKS=8
+      - TINY_LLM_ENABLE_OPTIMIZATION=true
+      - TINY_LLM_SECURITY_MODE=strict
+    
+    volumes:
+      - ./logs:/app/logs
+      - ./cache:/app/cache
+      - ./models:/app/models:ro
+      - ./results:/app/results
+      - /dev/ttyUSB0:/dev/ttyUSB0  # Example USB device passthrough
+    
+    ports:
+      - "8080:8080"  # Web interface
+      - "8443:8443"  # HTTPS interface
+    
+    device_cgroup_rules:
+      - 'c 188:* rmw'  # USB devices
+    
+    security_opt:
+      - no-new-privileges:true
+    
+    read_only: true
+    tmpfs:
+      - /tmp:size=100M,noexec,nosuid,nodev
+    
+    healthcheck:
+      test: ["CMD", "python3", "-c", "from src.tiny_llm_profiler.health import run_health_checks; exit(0 if run_health_checks() else 1)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    
+    deploy:
+      resources:
+        limits:
+          cpus: '4.0'
+          memory: 8G
+        reservations:
+          cpus: '1.0' 
+          memory: 2G
+      
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+
+  redis-cache:
+    image: redis:7-alpine
+    container_name: tiny-llm-cache
+    restart: unless-stopped
+    
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    
+    volumes:
+      - redis-data:/data
+    
+    ports:
+      - "6379:6379"
+    
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: tiny-llm-monitoring
+    restart: unless-stopped
+    
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    
+    ports:
+      - "9090:9090"
+    
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=30d'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: tiny-llm-dashboard
+    restart: unless-stopped
+    
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SERVER_DOMAIN=${DOMAIN:-localhost}
+    
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources:ro
+    
+    ports:
+      - "3000:3000"
+    
+    depends_on:
+      - prometheus
+
+volumes:
+  redis-data:
+    driver: local
+  prometheus-data:
+    driver: local  
+  grafana-data:
+    driver: local
+
+networks:
+  default:
+    name: tiny-llm-network
+    driver: bridge
