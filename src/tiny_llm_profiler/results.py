@@ -56,6 +56,13 @@ class PowerProfile:
     voltage_v: float = 3.3
     thermal_info: Optional[Dict[str, float]] = None
     
+    # Additional fields that may be added by power profiler
+    avg_voltage_v: float = 3.3
+    avg_current_ma: float = 0.0
+    power_std_mw: float = 0.0
+    sample_count: int = 0
+    duration_s: float = 0.0
+    
     def __post_init__(self):
         """Calculate derived metrics."""
         if self.average_current_ma == 0 and self.active_power_mw > 0:

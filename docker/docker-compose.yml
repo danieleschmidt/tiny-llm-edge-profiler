@@ -1,0 +1,139 @@
+version: '3.8'
+
+services:
+  # Main profiler service
+  profiler:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      target: production
+    image: tiny-llm-profiler:latest
+    container_name: tiny-llm-profiler
+    restart: unless-stopped
+    
+    # Environment variables
+    environment:
+      - PYTHONPATH=/app/src
+      - LOG_LEVEL=INFO
+      - CACHE_SIZE=1000
+      - CACHE_TTL=3600
+      - MAX_WORKERS=4
+    
+    # Volumes
+    volumes:
+      - profiler_data:/app/data
+      - profiler_cache:/app/cache
+      - profiler_logs:/app/logs
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "python", "-c", "from src.tiny_llm_profiler.health_monitor import get_system_health; print(get_system_health()['status'])"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # Concurrent profiler service (for high-throughput scenarios)
+  profiler-concurrent:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      target: production
+    image: tiny-llm-profiler:latest
+    container_name: tiny-llm-profiler-concurrent
+    restart: unless-stopped
+    
+    environment:
+      - PYTHONPATH=/app/src
+      - LOG_LEVEL=INFO
+      - MAX_WORKERS=8
+      - MODE=concurrent
+    
+    volumes:
+      - profiler_data:/app/data:ro
+      - profiler_logs:/app/logs
+    
+    deploy:
+      resources:
+        limits:
+          cpus: '4.0'
+          memory: 2G
+        reservations:
+          cpus: '1.0'
+          memory: 512M
+    
+    command: ["python", "-c", "
+      import sys; sys.path.insert(0, '/app/src/tiny_llm_profiler');
+      from scalable_profiler import run_concurrent_benchmark_demo;
+      run_concurrent_benchmark_demo()
+    "]
+    
+    depends_on:
+      - profiler
+    
+    profiles:
+      - concurrent
+
+  # Health monitoring service
+  health-monitor:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      target: production
+    image: tiny-llm-profiler:latest
+    container_name: profiler-health-monitor
+    restart: unless-stopped
+    
+    environment:
+      - PYTHONPATH=/app/src
+      - LOG_LEVEL=INFO
+      - MONITORING_INTERVAL=30
+    
+    volumes:
+      - profiler_logs:/app/logs
+    
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.1'
+          memory: 64M
+    
+    command: ["python", "-c", "
+      import sys, time; sys.path.insert(0, '/app/src/tiny_llm_profiler');
+      from health_monitor import start_global_monitoring, get_system_health;
+      start_global_monitoring();
+      print('Health monitoring started');
+      while True:
+        health = get_system_health();
+        print(f'System health: {health[\"status\"]}');
+        time.sleep(30)
+    "]
+    
+    profiles:
+      - monitoring
+
+volumes:
+  profiler_data:
+    driver: local
+  profiler_cache:
+    driver: local
+  profiler_logs:
+    driver: local
+
+networks:
+  default:
+    name: profiler-network
+    driver: bridge
