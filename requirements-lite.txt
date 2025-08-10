@@ -1,0 +1,16 @@
+# Lightweight requirements for tiny-llm-edge-profiler lite version
+# This version works without numpy and other heavy dependencies
+
+# Core Python standard library modules (no additional dependencies needed)
+# All functionality is provided by core_lite.py, health_monitor.py, 
+# performance_cache.py, and scalable_profiler.py
+
+# Optional lightweight dependencies (uncomment if needed)
+# psutil>=5.9.0  # For system monitoring (optional)
+
+# For development and testing only
+# pytest>=7.0.0
+# pytest-cov>=4.0.0
+
+# Note: The lite version is designed to work with Python 3.8+ standard library only
+# This makes it extremely portable and fast to install

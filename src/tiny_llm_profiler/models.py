@@ -88,6 +88,9 @@ class QuantizedModel:
         self._size_mb: Optional[float] = None
         self._parameter_count: Optional[int] = None
         
+        # Add estimated performance attributes for optimization
+        self.estimated_tokens_per_second = 10.0  # Default estimate
+        
         # Load model if path provided
         if self.model_path and self.model_path.exists():
             self.load()
