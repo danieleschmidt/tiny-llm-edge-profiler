@@ -322,7 +322,7 @@ class PlatformManager:
             "jetson_nano": PlatformConfig(
                 name="jetson_nano",
                 display_name="NVIDIA Jetson Nano",
-                architecture=Architecture.ARM_CORTEX_A57,
+                architecture=Architecture.ARM_CORTEX_A53,
                 memory=MemoryConfiguration(
                     ram_kb=4 * 1024 * 1024,  # 4GB
                     flash_kb=32 * 1024 * 1024,  # 32GB eMMC typical

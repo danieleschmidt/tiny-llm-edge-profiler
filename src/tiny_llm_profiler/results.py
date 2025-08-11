@@ -24,6 +24,8 @@ class LatencyProfile:
     percentile_90_ms: float = 0.0
     percentile_95_ms: float = 0.0
     percentile_99_ms: float = 0.0
+    sample_count: int = 1
+    success_rate: float = 1.0
     
     def __post_init__(self):
         """Calculate derived metrics."""
@@ -42,6 +44,8 @@ class MemoryProfile:
     gc_overhead_percent: float = 0.0
     stack_usage_kb: float = 0.0
     heap_usage_kb: float = 0.0
+    sample_count: int = 1
+    success_rate: float = 1.0
 
 
 @dataclass
@@ -59,6 +63,8 @@ class PowerProfile:
     # Additional fields that may be added by power profiler
     avg_voltage_v: float = 3.3
     avg_current_ma: float = 0.0
+    measurement_duration_sec: float = 1.0
+    simulated: bool = False
     power_std_mw: float = 0.0
     sample_count: int = 0
     duration_s: float = 0.0
@@ -102,7 +108,9 @@ class ProfileResults:
         model_name: str,
         model_size_mb: float,
         quantization: str,
-        timestamp: Optional[datetime] = None
+        timestamp: Optional[datetime] = None,
+        session_id: Optional[str] = None,
+        start_time: Optional[datetime] = None
     ):
         """
         Initialize ProfileResults.
@@ -119,6 +127,8 @@ class ProfileResults:
         self.model_size_mb = model_size_mb
         self.quantization = quantization
         self.timestamp = timestamp or datetime.now(timezone.utc)
+        self.session_id = session_id
+        self.start_time = start_time or datetime.now(timezone.utc)
         
         # Profile data
         self.latency_profile: Optional[LatencyProfile] = None

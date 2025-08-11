@@ -13,6 +13,46 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+class SystemHealthMonitor:
+    """System-wide health monitoring for profiling operations."""
+    
+    def __init__(self, check_interval: int = 5):
+        self.check_interval = check_interval
+        self._running = False
+        self._thread = None
+        self._metrics = HealthMetrics()
+        
+    def start(self):
+        """Start health monitoring."""
+        self._running = True
+        self._thread = threading.Thread(target=self._monitor_loop)
+        self._thread.daemon = True
+        self._thread.start()
+        
+    def stop(self):
+        """Stop health monitoring."""
+        self._running = False
+        if self._thread:
+            self._thread.join()
+            
+    def get_current_metrics(self) -> 'HealthMetrics':
+        """Get current health metrics."""
+        return self._metrics
+        
+    def _monitor_loop(self):
+        """Main monitoring loop."""
+        import psutil
+        while self._running:
+            try:
+                self._metrics.cpu_usage_percent = psutil.cpu_percent()
+                self._metrics.memory_usage_mb = psutil.virtual_memory().used / (1024 * 1024)
+                self._metrics.disk_usage_percent = psutil.disk_usage('/').percent
+                self._metrics.timestamp = time.time()
+            except Exception as e:
+                logger.error(f"Health monitoring error: {e}")
+            time.sleep(self.check_interval)
+
+
 @dataclass
 class HealthMetrics:
     """Health and performance metrics."""
