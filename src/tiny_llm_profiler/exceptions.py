@@ -29,6 +29,26 @@ class DeviceError(TinyLLMProfilerError):
     pass
 
 
+class NetworkError(TinyLLMProfilerError):
+    """Errors related to network communication and connectivity."""
+    pass
+
+
+class ResourceError(TinyLLMProfilerError):
+    """Errors related to resource allocation and management."""
+    pass
+
+
+class BenchmarkError(TinyLLMProfilerError):
+    """Errors related to benchmarking operations."""
+    pass
+
+
+class ValidationError(TinyLLMProfilerError):
+    """Errors related to data validation."""
+    pass
+
+
 class DeviceConnectionError(DeviceError):
     """Device connection failed."""
     

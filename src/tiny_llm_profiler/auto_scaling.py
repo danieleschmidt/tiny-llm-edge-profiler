@@ -14,7 +14,7 @@ from concurrent.futures import ThreadPoolExecutor
 import queue
 import psutil
 
-from .concurrent import ProfilingTask, TaskResult, TaskStatus
+from .concurrent_utils import ProfilingTask, TaskResult, TaskStatus
 from .monitoring import HealthMonitor, Metric, MetricType
 
 
