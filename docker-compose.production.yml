@@ -1,0 +1,427 @@
+# Production Docker Compose for Self-Healing Pipeline Guard
+# Multi-service deployment with monitoring, logging, and security
+
+version: '3.8'
+
+networks:
+  guard-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+  monitoring:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.21.0.0/16
+
+volumes:
+  guard-data:
+    driver: local
+  guard-logs:
+    driver: local
+  prometheus-data:
+    driver: local
+  grafana-data:
+    driver: local
+  redis-data:
+    driver: local
+
+services:
+  # Main Self-Healing Pipeline Guard Service
+  guard-unified:
+    build:
+      context: .
+      dockerfile: docker/self-healing-guard/Dockerfile
+      target: production
+      args:
+        BUILD_VERSION: ${BUILD_VERSION:-latest}
+        BUILD_DATE: ${BUILD_DATE}
+        VCS_REF: ${VCS_REF}
+    image: terragon/self-healing-guard:${TAG:-latest}
+    container_name: guard-unified
+    hostname: guard-unified
+    restart: unless-stopped
+    environment:
+      - GUARD_MODE=unified
+      - GUARD_PORT=8080
+      - GUARD_REGION=${GUARD_REGION:-us-east-1}
+      - GUARD_ENVIRONMENT=production
+      - GUARD_LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - GUARD_WORKERS=${GUARD_WORKERS:-4}
+      - GUARD_MAX_MEMORY_MB=${MAX_MEMORY_MB:-2048}
+      - GUARD_ENABLE_SECURITY=true
+      - GUARD_API_KEY_REQUIRED=true
+      - GUARD_API_KEY=${GUARD_API_KEY}
+      - REDIS_URL=redis://redis:6379/0
+      - PROMETHEUS_GATEWAY=http://prometheus:9090
+    ports:
+      - "8080:8080"
+    volumes:
+      - guard-data:/app/data
+      - guard-logs:/app/logs
+      - ./config:/app/config:ro
+    networks:
+      - guard-network
+      - monitoring
+    depends_on:
+      - redis
+      - prometheus
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    healthcheck:
+      test: ["CMD", "python3", "/app/healthcheck.py"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    logging:
+      driver: json-file
+      options:
+        max-size: "100m"
+        max-file: "5"
+        labels: "service=guard-unified"
+
+  # Pipeline-specific Guard Service
+  guard-pipeline:
+    build:
+      context: .
+      dockerfile: docker/self-healing-guard/Dockerfile
+      target: production
+    image: terragon/self-healing-guard:${TAG:-latest}
+    container_name: guard-pipeline
+    hostname: guard-pipeline
+    restart: unless-stopped
+    environment:
+      - GUARD_MODE=pipeline
+      - GUARD_PORT=8081
+      - GUARD_REGION=${GUARD_REGION:-us-east-1}
+      - GUARD_ENVIRONMENT=production
+      - GUARD_LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - REDIS_URL=redis://redis:6379/1
+    ports:
+      - "8081:8081"
+    volumes:
+      - guard-data:/app/data
+      - guard-logs:/app/logs
+      - ./config:/app/config:ro
+    networks:
+      - guard-network
+      - monitoring
+    depends_on:
+      - redis
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    healthcheck:
+      test: ["CMD", "python3", "/app/healthcheck.py"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "3"
+
+  # Infrastructure Monitoring Service
+  guard-infrastructure:
+    build:
+      context: .
+      dockerfile: docker/self-healing-guard/Dockerfile
+      target: production
+    image: terragon/self-healing-guard:${TAG:-latest}
+    container_name: guard-infrastructure
+    hostname: guard-infrastructure
+    restart: unless-stopped
+    environment:
+      - GUARD_MODE=infrastructure
+      - GUARD_PORT=8082
+      - GUARD_REGION=${GUARD_REGION:-us-east-1}
+      - GUARD_ENVIRONMENT=production
+      - GUARD_LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - REDIS_URL=redis://redis:6379/2
+    ports:
+      - "8082:8082"
+    volumes:
+      - guard-data:/app/data
+      - guard-logs:/app/logs
+      - ./config:/app/config:ro
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+    networks:
+      - guard-network
+      - monitoring
+    depends_on:
+      - redis
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.1'
+          memory: 128M
+    healthcheck:
+      test: ["CMD", "python3", "/app/healthcheck.py"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "3"
+
+  # Redis for caching and coordination
+  redis:
+    image: redis:7-alpine
+    container_name: guard-redis
+    hostname: redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis-data:/data
+    networks:
+      - guard-network
+      - monitoring
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.1'
+          memory: 64M
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "2"
+
+  # Prometheus for metrics collection
+  prometheus:
+    image: prom/prometheus:v2.45.0
+    container_name: guard-prometheus
+    hostname: prometheus
+    restart: unless-stopped
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=30d'
+      - '--web.enable-lifecycle'
+      - '--web.enable-admin-api'
+    volumes:
+      - ./deployment/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    ports:
+      - "9090:9090"
+    networks:
+      - monitoring
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.2'
+          memory: 256M
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9090/-/healthy"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "3"
+
+  # Grafana for visualization
+  grafana:
+    image: grafana/grafana:10.0.0
+    container_name: guard-grafana
+    hostname: grafana
+    restart: unless-stopped
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin123}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SECURITY_SECRET_KEY=${GRAFANA_SECRET_KEY}
+      - GF_INSTALL_PLUGINS=grafana-piechart-panel,grafana-worldmap-panel
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./deployment/monitoring/grafana:/etc/grafana/provisioning:ro
+    ports:
+      - "3000:3000"
+    networks:
+      - monitoring
+    depends_on:
+      - prometheus
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.1'
+          memory: 128M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "3"
+
+  # Node Exporter for system metrics
+  node-exporter:
+    image: prom/node-exporter:v1.6.0
+    container_name: guard-node-exporter
+    hostname: node-exporter
+    restart: unless-stopped
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    ports:
+      - "9100:9100"
+    networks:
+      - monitoring
+    deploy:
+      resources:
+        limits:
+          cpus: '0.2'
+          memory: 128M
+        reservations:
+          cpus: '0.05'
+          memory: 32M
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "2"
+
+  # Log aggregator (optional)
+  loki:
+    image: grafana/loki:2.8.0
+    container_name: guard-loki
+    hostname: loki
+    restart: unless-stopped
+    command: -config.file=/etc/loki/local-config.yaml
+    volumes:
+      - ./deployment/monitoring/loki-config.yml:/etc/loki/local-config.yaml:ro
+    ports:
+      - "3100:3100"
+    networks:
+      - monitoring
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.1'
+          memory: 128M
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "3"
+
+  # Nginx reverse proxy for production
+  nginx:
+    image: nginx:1.24-alpine
+    container_name: guard-nginx
+    hostname: nginx
+    restart: unless-stopped
+    volumes:
+      - ./deployment/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./deployment/nginx/ssl:/etc/nginx/ssl:ro
+    ports:
+      - "80:80"
+      - "443:443"
+    networks:
+      - guard-network
+      - monitoring
+    depends_on:
+      - guard-unified
+      - guard-pipeline
+      - guard-infrastructure
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.1'
+          memory: 64M
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "3"
+
+  # Watchtower for automatic updates (optional, use with caution in production)
+  watchtower:
+    image: containrrr/watchtower:1.5.3
+    container_name: guard-watchtower
+    hostname: watchtower
+    restart: unless-stopped
+    environment:
+      - WATCHTOWER_CLEANUP=true
+      - WATCHTOWER_POLL_INTERVAL=86400  # Check daily
+      - WATCHTOWER_INCLUDE_STOPPED=true
+      - WATCHTOWER_REVIVE_STOPPED=false
+      - WATCHTOWER_NOTIFICATIONS=email
+      - WATCHTOWER_NOTIFICATION_EMAIL_FROM=${WATCHTOWER_EMAIL_FROM}
+      - WATCHTOWER_NOTIFICATION_EMAIL_TO=${WATCHTOWER_EMAIL_TO}
+      - WATCHTOWER_NOTIFICATION_EMAIL_SERVER=${WATCHTOWER_EMAIL_SERVER}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - guard-network
+    deploy:
+      resources:
+        limits:
+          cpus: '0.1'
+          memory: 64M
+        reservations:
+          cpus: '0.05'
+          memory: 32M
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "2"
+    profiles:
+      - watchtower  # Enable with: docker-compose --profile watchtower up
