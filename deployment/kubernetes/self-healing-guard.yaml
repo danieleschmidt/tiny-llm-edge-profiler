@@ -1,0 +1,771 @@
+# Kubernetes Deployment for Self-Healing Pipeline Guard
+# Production-ready deployment with high availability and auto-scaling
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: self-healing-guard
+  labels:
+    name: self-healing-guard
+    app.kubernetes.io/name: self-healing-guard
+    app.kubernetes.io/version: "1.0.0"
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: guard-config
+  namespace: self-healing-guard
+  labels:
+    app.kubernetes.io/name: self-healing-guard
+    app.kubernetes.io/component: config
+data:
+  guard.yaml: |
+    guard:
+      mode: unified
+      region: us-east-1
+      environment: production
+      log_level: INFO
+      
+      monitoring:
+        health_check_interval: 30
+        metrics_retention_hours: 168  # 7 days
+        auto_scaling_enabled: true
+        
+      security:
+        api_key_required: true
+        rate_limiting_enabled: true
+        max_requests_per_minute: 1000
+        
+      performance:
+        max_workers: 4
+        max_memory_mb: 2048
+        cache_size: 1000
+        
+      reliability:
+        circuit_breaker_enabled: true
+        retry_attempts: 3
+        timeout_seconds: 30
+
+  regions.yaml: |
+    regions:
+      us-east-1:
+        primary: true
+        capabilities: [pipeline, infrastructure, security]
+        compliance: [SOX, HIPAA, CCPA]
+        
+      us-west-2:
+        primary: false
+        capabilities: [pipeline, infrastructure]
+        compliance: [CCPA]
+        
+      eu-west-1:
+        primary: false
+        capabilities: [pipeline, infrastructure, security]
+        compliance: [GDPR, ISO27001]
+        
+      ap-southeast-1:
+        primary: false
+        capabilities: [pipeline, infrastructure]
+        compliance: [PDPA]
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: guard-secrets
+  namespace: self-healing-guard
+  labels:
+    app.kubernetes.io/name: self-healing-guard
+    app.kubernetes.io/component: config
+type: Opaque
+data:
+  # Base64 encoded secrets - replace with actual values
+  api-key: <BASE64_ENCODED_API_KEY>
+  redis-password: <BASE64_ENCODED_REDIS_PASSWORD>
+  database-url: <BASE64_ENCODED_DATABASE_URL>
+  encryption-key: <BASE64_ENCODED_ENCRYPTION_KEY>
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: guard-unified-service
+  namespace: self-healing-guard
+  labels:
+    app.kubernetes.io/name: self-healing-guard
+    app.kubernetes.io/component: unified
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8080
+      targetPort: 8080
+      protocol: TCP
+      name: http
+    - port: 8081
+      targetPort: 8081
+      protocol: TCP
+      name: metrics
+  selector:
+    app.kubernetes.io/name: self-healing-guard
+    app.kubernetes.io/component: unified
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: guard-pipeline-service
+  namespace: self-healing-guard
+  labels:
+    app.kubernetes.io/name: self-healing-guard
+    app.kubernetes.io/component: pipeline
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8080
+      targetPort: 8080
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: self-healing-guard
+    app.kubernetes.io/component: pipeline
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: guard-infrastructure-service
+  namespace: self-healing-guard
+  labels:
+    app.kubernetes.io/name: self-healing-guard
+    app.kubernetes.io/component: infrastructure
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8080
+      targetPort: 8080
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: self-healing-guard
+    app.kubernetes.io/component: infrastructure
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-service
+  namespace: self-healing-guard
+  labels:
+    app.kubernetes.io/name: redis
+spec:
+  type: ClusterIP
+  ports:
+    - port: 6379
+      targetPort: 6379
+      protocol: TCP
+      name: redis
+  selector:
+    app.kubernetes.io/name: redis
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: guard-unified
+  namespace: self-healing-guard
+  labels:
+    app.kubernetes.io/name: self-healing-guard
+    app.kubernetes.io/component: unified
+    app.kubernetes.io/version: "1.0.0"
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: self-healing-guard
+      app.kubernetes.io/component: unified
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: self-healing-guard
+        app.kubernetes.io/component: unified
+        app.kubernetes.io/version: "1.0.0"
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8081"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: guard-service-account
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      containers:
+        - name: guard-unified
+          image: terragon/self-healing-guard:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+              name: http
+              protocol: TCP
+            - containerPort: 8081
+              name: metrics
+              protocol: TCP
+          env:
+            - name: GUARD_MODE
+              value: "unified"
+            - name: GUARD_PORT
+              value: "8080"
+            - name: GUARD_REGION
+              valueFrom:
+                configMapKeyRef:
+                  name: guard-config
+                  key: region
+                  optional: true
+            - name: GUARD_ENVIRONMENT
+              value: "production"
+            - name: GUARD_LOG_LEVEL
+              value: "INFO"
+            - name: GUARD_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: guard-secrets
+                  key: api-key
+            - name: REDIS_URL
+              value: "redis://redis-service:6379/0"
+            - name: KUBERNETES_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+          resources:
+            limits:
+              cpu: "2"
+              memory: "2Gi"
+            requests:
+              cpu: "500m"
+              memory: "512Mi"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          volumeMounts:
+            - name: config-volume
+              mountPath: /app/config
+              readOnly: true
+            - name: data-volume
+              mountPath: /app/data
+            - name: logs-volume
+              mountPath: /app/logs
+            - name: tmp-volume
+              mountPath: /app/tmp
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+      volumes:
+        - name: config-volume
+          configMap:
+            name: guard-config
+        - name: data-volume
+          emptyDir: {}
+        - name: logs-volume
+          emptyDir: {}
+        - name: tmp-volume
+          emptyDir: {}
+      nodeSelector:
+        kubernetes.io/os: linux
+      tolerations:
+        - key: "node.kubernetes.io/not-ready"
+          operator: "Exists"
+          effect: "NoExecute"
+          tolerationSeconds: 300
+        - key: "node.kubernetes.io/unreachable"
+          operator: "Exists"
+          effect: "NoExecute"
+          tolerationSeconds: 300
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: guard-pipeline
+  namespace: self-healing-guard
+  labels:
+    app.kubernetes.io/name: self-healing-guard
+    app.kubernetes.io/component: pipeline
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: self-healing-guard
+      app.kubernetes.io/component: pipeline
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: self-healing-guard
+        app.kubernetes.io/component: pipeline
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: guard-service-account
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+      containers:
+        - name: guard-pipeline
+          image: terragon/self-healing-guard:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+              name: http
+          env:
+            - name: GUARD_MODE
+              value: "pipeline"
+            - name: GUARD_PORT
+              value: "8080"
+            - name: GUARD_ENVIRONMENT
+              value: "production"
+            - name: REDIS_URL
+              value: "redis://redis-service:6379/1"
+          resources:
+            limits:
+              cpu: "1"
+              memory: "1Gi"
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+          volumeMounts:
+            - name: config-volume
+              mountPath: /app/config
+              readOnly: true
+            - name: tmp-volume
+              mountPath: /app/tmp
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+      volumes:
+        - name: config-volume
+          configMap:
+            name: guard-config
+        - name: tmp-volume
+          emptyDir: {}
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: guard-infrastructure
+  namespace: self-healing-guard
+  labels:
+    app.kubernetes.io/name: self-healing-guard
+    app.kubernetes.io/component: infrastructure
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: self-healing-guard
+      app.kubernetes.io/component: infrastructure
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: self-healing-guard
+        app.kubernetes.io/component: infrastructure
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: guard-service-account
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+      containers:
+        - name: guard-infrastructure
+          image: terragon/self-healing-guard:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+              name: http
+          env:
+            - name: GUARD_MODE
+              value: "infrastructure"
+            - name: GUARD_PORT
+              value: "8080"
+            - name: GUARD_ENVIRONMENT
+              value: "production"
+            - name: REDIS_URL
+              value: "redis://redis-service:6379/2"
+          resources:
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+          volumeMounts:
+            - name: config-volume
+              mountPath: /app/config
+              readOnly: true
+            - name: proc
+              mountPath: /host/proc
+              readOnly: true
+            - name: sys
+              mountPath: /host/sys
+              readOnly: true
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+      volumes:
+        - name: config-volume
+          configMap:
+            name: guard-config
+        - name: proc
+          hostPath:
+            path: /proc
+        - name: sys
+          hostPath:
+            path: /sys
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  namespace: self-healing-guard
+  labels:
+    app.kubernetes.io/name: redis
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: redis
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: redis
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 999
+        runAsGroup: 999
+        fsGroup: 999
+      containers:
+        - name: redis
+          image: redis:7-alpine
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 6379
+              name: redis
+          command:
+            - redis-server
+            - --appendonly
+            - "yes"
+            - --maxmemory
+            - "256mb"
+            - --maxmemory-policy
+            - "allkeys-lru"
+          resources:
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+          livenessProbe:
+            exec:
+              command:
+                - redis-cli
+                - ping
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+          readinessProbe:
+            exec:
+              command:
+                - redis-cli
+                - ping
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 1
+          volumeMounts:
+            - name: redis-data
+              mountPath: /data
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+      volumes:
+        - name: redis-data
+          emptyDir: {}
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: guard-service-account
+  namespace: self-healing-guard
+  labels:
+    app.kubernetes.io/name: self-healing-guard
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: guard-cluster-role
+  labels:
+    app.kubernetes.io/name: self-healing-guard
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "services", "endpoints", "nodes"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["apps"]
+    resources: ["deployments", "replicasets"]
+    verbs: ["get", "list", "watch", "patch", "update"]
+  - apiGroups: ["metrics.k8s.io"]
+    resources: ["pods", "nodes"]
+    verbs: ["get", "list"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: guard-cluster-role-binding
+  labels:
+    app.kubernetes.io/name: self-healing-guard
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: guard-cluster-role
+subjects:
+  - kind: ServiceAccount
+    name: guard-service-account
+    namespace: self-healing-guard
+
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: guard-unified-hpa
+  namespace: self-healing-guard
+  labels:
+    app.kubernetes.io/name: self-healing-guard
+    app.kubernetes.io/component: unified
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: guard-unified
+  minReplicas: 3
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+        - type: Percent
+          value: 10
+          periodSeconds: 60
+    scaleUp:
+      stabilizationWindowSeconds: 60
+      policies:
+        - type: Percent
+          value: 50
+          periodSeconds: 60
+
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: guard-pipeline-hpa
+  namespace: self-healing-guard
+  labels:
+    app.kubernetes.io/name: self-healing-guard
+    app.kubernetes.io/component: pipeline
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: guard-pipeline
+  minReplicas: 2
+  maxReplicas: 6
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: guard-ingress
+  namespace: self-healing-guard
+  labels:
+    app.kubernetes.io/name: self-healing-guard
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/rate-limit: "100"
+    nginx.ingress.kubernetes.io/rate-limit-window: "1m"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/use-regex: "true"
+spec:
+  tls:
+    - hosts:
+        - guard.example.com
+        - api.guard.example.com
+      secretName: guard-tls-secret
+  rules:
+    - host: guard.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: guard-unified-service
+                port:
+                  number: 8080
+    - host: api.guard.example.com
+      http:
+        paths:
+          - path: /pipeline
+            pathType: Prefix
+            backend:
+              service:
+                name: guard-pipeline-service
+                port:
+                  number: 8080
+          - path: /infrastructure
+            pathType: Prefix
+            backend:
+              service:
+                name: guard-infrastructure-service
+                port:
+                  number: 8080
+
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: guard-unified-pdb
+  namespace: self-healing-guard
+  labels:
+    app.kubernetes.io/name: self-healing-guard
+    app.kubernetes.io/component: unified
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: self-healing-guard
+      app.kubernetes.io/component: unified
+
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: guard-pipeline-pdb
+  namespace: self-healing-guard
+  labels:
+    app.kubernetes.io/name: self-healing-guard
+    app.kubernetes.io/component: pipeline
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: self-healing-guard
+      app.kubernetes.io/component: pipeline
