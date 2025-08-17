@@ -4,7 +4,6 @@
 # Core dependencies
 numpy>=1.21.0
 pyserial>=3.5
-asyncio-mqtt>=0.11.0
 pydantic>=2.0.0
 click>=8.0.0
 rich>=13.0.0
@@ -13,3 +12,13 @@ pandas>=1.5.0
 psutil>=5.9.0
 aiofiles>=23.0.0
 httpx>=0.24.0
+pyyaml>=6.0.0
+lz4>=4.0.0
+scikit-learn>=1.0.0
+aiohttp>=3.8.0
+
+# Optional dependencies - install only if needed
+# asyncio-mqtt>=0.11.0  # For MQTT functionality
+# redis>=6.0.0          # For caching
+# geopy>=2.3.0          # For geographic features
+# dnspython>=2.3.0      # For DNS resolution

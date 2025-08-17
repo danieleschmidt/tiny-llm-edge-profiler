@@ -138,6 +138,21 @@ from .global_deployment_manager import (
     get_global_deployment_manager, deploy_globally, route_profiling_request, get_global_status
 )
 
+# Generation 5: Research and Academic Publication Framework
+# Note: Import these components only when needed to avoid dependency issues
+# from .research_framework import (
+#     NovelAlgorithmProfiler, ComparativeStudyFramework, BenchmarkSuiteGenerator,
+#     ResearchExperiment, ResearchResults, ResearchMetric, ExperimentalCondition
+# )
+# from .experimental_validation import (
+#     ExperimentalValidationEngine, StatisticalValidator, CrossValidationFramework,
+#     BootstrapValidator, ValidationConfiguration, ExperimentalResult
+# )
+# from .publication_pipeline import (
+#     PublicationPipeline, PublicationFigureGenerator, LaTeXDocumentGenerator,
+#     PublicationVenue, PublicationRequirements, FigureSpecification
+# )
+
 __all__ = [
     # Core API
     "EdgeProfiler",
@@ -319,4 +334,21 @@ __all__ = [
     "deploy_globally",
     "route_profiling_request",
     "get_global_status",
+    
+    # Generation 5: Research and Academic Publication Framework
+    "ResearchFramework",
+    "NovelAlgorithmProfiler",
+    "ComparativeStudyFramework", 
+    "BenchmarkSuiteGenerator",
+    "ExperimentalValidationEngine",
+    "StatisticalValidator",
+    "CrossValidationFramework",
+    "BootstrapValidator",
+    "PublicationPipeline",
+    "PublicationFigureGenerator",
+    "LaTeXDocumentGenerator",
+    "ResearchExperiment",
+    "ResearchResults",
+    "ValidationConfiguration",
+    "PublicationVenue",
 ]
