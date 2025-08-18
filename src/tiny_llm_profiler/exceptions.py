@@ -190,6 +190,10 @@ class ProfilerConfigurationError(ProfilingError):
         super().__init__(message, "PROFILER_CONFIG_ERROR", details)
 
 
+# ProfilerError alias for backward compatibility
+ProfilerError = TinyLLMProfilerError
+
+
 class ResourceError(TinyLLMProfilerError):
     """Errors related to system resources."""
     pass

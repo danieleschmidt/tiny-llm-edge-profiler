@@ -1011,3 +1011,80 @@ async def process_with_neuromorphic(
     """Process metrics through neuromorphic network."""
     profiler = get_neuromorphic_profiler()
     return await profiler.process_profiling_metrics(network_id, metrics, simulation_time)
+
+
+# Simple NeuromorphicProcessor for integration with other systems
+class NeuromorphicProcessor:
+    """Simplified neuromorphic processor for integration with other systems."""
+    
+    def __init__(self, config: Dict[str, Any] = None):
+        self.config = config or {}
+        self.processing_history: List[Dict[str, Any]] = []
+        self.adaptation_level = 0.5
+        
+    def process_input(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Process input through neuromorphic-inspired algorithms."""
+        start_time = time.time()
+        
+        # Simulate neuromorphic processing
+        confidence = self._calculate_confidence(input_data)
+        decision = self._make_decision(input_data, confidence)
+        
+        processing_time = time.time() - start_time
+        
+        result = {
+            "input": input_data,
+            "decision": decision,
+            "confidence": confidence,
+            "processing_time_s": processing_time,
+            "adaptation_level": self.adaptation_level
+        }
+        
+        self.processing_history.append(result)
+        self._update_adaptation(result)
+        
+        return result
+    
+    def _calculate_confidence(self, input_data: Dict[str, Any]) -> float:
+        """Calculate confidence in processing."""
+        # Simple heuristic based on input consistency
+        values = [v for v in input_data.values() if isinstance(v, (int, float))]
+        if not values:
+            return 0.5
+        
+        # Higher values generally indicate higher confidence
+        normalized_sum = sum(max(0, min(1, v)) for v in values) / len(values)
+        return normalized_sum
+    
+    def _make_decision(self, input_data: Dict[str, Any], confidence: float) -> Dict[str, Any]:
+        """Make decision based on input and confidence."""
+        if confidence > 0.8:
+            decision = "high_confidence_action"
+        elif confidence > 0.5:
+            decision = "moderate_confidence_action"
+        else:
+            decision = "low_confidence_action"
+        
+        return {
+            "decision": decision,
+            "confidence": confidence,
+            "reasoning": "Neuromorphic pattern matching"
+        }
+    
+    def _update_adaptation(self, result: Dict[str, Any]):
+        """Update adaptation level based on results."""
+        confidence = result["confidence"]
+        
+        # Adapt based on confidence trends
+        if confidence > 0.7:
+            self.adaptation_level = min(1.0, self.adaptation_level * 1.01)
+        else:
+            self.adaptation_level = max(0.1, self.adaptation_level * 0.99)
+    
+    def get_processor_state(self) -> Dict[str, Any]:
+        """Get current processor state."""
+        return {
+            "adaptation_level": self.adaptation_level,
+            "processing_count": len(self.processing_history),
+            "avg_confidence": sum(r["confidence"] for r in self.processing_history[-10:]) / min(10, len(self.processing_history)) if self.processing_history else 0.0
+        }

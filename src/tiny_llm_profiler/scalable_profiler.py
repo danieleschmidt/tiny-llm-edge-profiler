@@ -501,5 +501,9 @@ def run_concurrent_benchmark_demo():
         profiler.stop()
 
 
+# Alias for backward compatibility
+ScalableProfiler = ConcurrentProfiler
+
+
 if __name__ == "__main__":
     run_concurrent_benchmark_demo()
