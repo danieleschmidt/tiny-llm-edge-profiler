@@ -15,7 +15,7 @@ import queue
 from .exceptions import TinyLLMProfilerError, ResourceError
 from .logging_config import get_logger, PerformanceLogger
 from .concurrent_utils import ProfilingTask, TaskResult
-from .scalable_profiler import ScalableProfiler
+from .scalable_profiler import ScalableProfiler, ConcurrentProfiler
 from .resource_pool import ResourcePoolManager, ResourcePool
 from .health import health_checker
 
