@@ -1049,7 +1049,7 @@ class TestComprehensiveProfilingWorkflows:
                 
                 remaining -= current_chunk
     
-    def _get_suitable_platforms(self, model_size_mb: float) -> List[str]:
+    def _get_suitable_platforms(self, model_size_mb: float) -> list[str]:
         """Get platforms suitable for a model of given size."""
         if model_size_mb <= 1.5:
             return ["esp32", "stm32f7", "rp2040", "nrf52840"]
