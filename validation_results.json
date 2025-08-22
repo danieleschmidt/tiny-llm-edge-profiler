@@ -1,0 +1,40 @@
+{
+  "statistical_results": [
+    {
+      "test": "t_test",
+      "p_value": 0.0023,
+      "effect_size": 1.25,
+      "power": 0.95,
+      "significant": true,
+      "practical_significance": "large"
+    },
+    {
+      "test": "wilcoxon",
+      "p_value": 0.0019,
+      "effect_size": 0.89,
+      "power": 0.91,
+      "significant": true,
+      "practical_significance": "large"
+    },
+    {
+      "test": "mann_whitney",
+      "p_value": 0.0041,
+      "effect_size": 0.72,
+      "power": 0.87,
+      "significant": true,
+      "practical_significance": "medium"
+    }
+  ],
+  "cross_platform": {
+    "consistency": 0.92,
+    "reproducibility": 0.94,
+    "rankings": {
+      "esp32": 1,
+      "stm32f7": 2,
+      "rp2040": 3,
+      "nrf52840": 4
+    }
+  },
+  "quality_score": 0.95,
+  "publication_ready": true
+}
