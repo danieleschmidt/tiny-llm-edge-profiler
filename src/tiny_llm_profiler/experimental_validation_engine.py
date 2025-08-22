@@ -48,6 +48,27 @@ class ValidationMethod(str, Enum):
 
 
 class StatisticalTest(str, Enum):
+    """Statistical test types for research validation."""
+    T_TEST = "t_test"
+    WILCOXON = "wilcoxon"
+    MANN_WHITNEY = "mann_whitney"
+    KRUSKAL_WALLIS = "kruskal_wallis"
+    CHI_SQUARE = "chi_square"
+    FISHER_EXACT = "fisher_exact"
+    KOLMOGOROV_SMIRNOV = "kolmogorov_smirnov"
+    PERMUTATION_TEST = "permutation_test"
+    BOOTSTRAP_TEST = "bootstrap_test"
+
+
+class EffectSizeMetric(str, Enum):
+    """Effect size metrics for practical significance."""
+    COHENS_D = "cohens_d"
+    HEDGES_G = "hedges_g"
+    GLASS_DELTA = "glass_delta"
+    ETA_SQUARED = "eta_squared"
+    OMEGA_SQUARED = "omega_squared"
+    CLIFF_DELTA = "cliff_delta"
+    RANK_BISERIAL = "rank_biserial"
     """Statistical test types."""
     T_TEST_INDEPENDENT = "t_test_independent"
     T_TEST_PAIRED = "t_test_paired"
@@ -78,8 +99,8 @@ class ValidationConfiguration:
     random_state: int = 42
     confidence_level: float = 0.95
     statistical_tests: List[StatisticalTest] = field(default_factory=lambda: [
-        StatisticalTest.T_TEST_INDEPENDENT,
-        StatisticalTest.WILCOXON_SIGNED_RANK
+        StatisticalTest.T_TEST,
+        StatisticalTest.WILCOXON
     ])
     effect_size_metrics: List[EffectSizeMetric] = field(default_factory=lambda: [
         EffectSizeMetric.COHENS_D,
@@ -88,6 +109,9 @@ class ValidationConfiguration:
     min_sample_size: int = 30
     max_p_value: float = 0.05
     min_effect_size: float = 0.5
+    reproducibility_threshold: float = 0.90
+    cross_platform_validation: bool = True
+    statistical_power: float = 0.80
 
 
 @dataclass
@@ -98,6 +122,274 @@ class ExperimentalCondition:
     control_group: bool = False
     expected_improvement: Optional[float] = None
     replication_count: int = 10
+
+
+@dataclass
+class StatisticalResult:
+    """Statistical test result with comprehensive metrics."""
+    test_name: str
+    p_value: float
+    effect_size: float
+    confidence_interval: Tuple[float, float]
+    statistical_power: float
+    sample_size: int
+    effect_size_metric: str
+    interpretation: str
+    significance_level: float = 0.05
+    
+    @property
+    def is_significant(self) -> bool:
+        """Check if result is statistically significant."""
+        return self.p_value < self.significance_level
+    
+    @property
+    def practical_significance(self) -> str:
+        """Determine practical significance based on effect size."""
+        if self.effect_size < 0.2:
+            return "negligible"
+        elif self.effect_size < 0.5:
+            return "small"
+        elif self.effect_size < 0.8:
+            return "medium"
+        else:
+            return "large"
+
+
+@dataclass
+class CrossPlatformValidationResult:
+    """Cross-platform validation results."""
+    platform_results: Dict[str, List[float]]
+    overall_consistency: float
+    platform_rankings: Dict[str, int]
+    variance_analysis: Dict[str, float]
+    reproducibility_score: float
+
+
+class AdvancedStatisticalValidator:
+    """Advanced statistical validation with comprehensive testing."""
+    
+    def __init__(self, config: ValidationConfiguration):
+        self.config = config
+        self.logger = logging.getLogger(__name__)
+    
+    def calculate_cohens_d(self, group1: np.ndarray, group2: np.ndarray) -> float:
+        """Calculate Cohen's d effect size."""
+        n1, n2 = len(group1), len(group2)
+        s1, s2 = np.std(group1, ddof=1), np.std(group2, ddof=1)
+        pooled_std = np.sqrt(((n1 - 1) * s1**2 + (n2 - 1) * s2**2) / (n1 + n2 - 2))
+        return (np.mean(group1) - np.mean(group2)) / pooled_std
+    
+    def calculate_hedges_g(self, group1: np.ndarray, group2: np.ndarray) -> float:
+        """Calculate Hedges' g effect size (bias-corrected Cohen's d)."""
+        cohens_d = self.calculate_cohens_d(group1, group2)
+        n = len(group1) + len(group2)
+        correction = 1 - (3 / (4 * n - 9))
+        return cohens_d * correction
+    
+    def run_statistical_tests(self, experimental_data: np.ndarray, 
+                             control_data: np.ndarray) -> List[StatisticalResult]:
+        """Run comprehensive statistical test suite."""
+        results = []
+        
+        for test in self.config.statistical_tests:
+            if test == StatisticalTest.T_TEST:
+                stat, p_value = stats.ttest_ind(experimental_data, control_data)
+                effect_size = self.calculate_cohens_d(experimental_data, control_data)
+                effect_metric = "cohens_d"
+            elif test == StatisticalTest.WILCOXON:
+                stat, p_value = stats.mannwhitneyu(experimental_data, control_data, 
+                                                 alternative='two-sided')
+                effect_size = self.calculate_rank_biserial_correlation(experimental_data, 
+                                                                     control_data)
+                effect_metric = "rank_biserial"
+            elif test == StatisticalTest.MANN_WHITNEY:
+                stat, p_value = stats.mannwhitneyu(experimental_data, control_data)
+                effect_size = self.calculate_cliff_delta(experimental_data, control_data)
+                effect_metric = "cliff_delta"
+            else:
+                continue
+            
+            # Calculate confidence interval for effect size
+            ci_lower, ci_upper = self.calculate_effect_size_ci(experimental_data, 
+                                                              control_data, effect_size)
+            
+            # Calculate statistical power
+            power = self.calculate_statistical_power(experimental_data, control_data, 
+                                                   effect_size)
+            
+            result = StatisticalResult(
+                test_name=test.value,
+                p_value=p_value,
+                effect_size=effect_size,
+                confidence_interval=(ci_lower, ci_upper),
+                statistical_power=power,
+                sample_size=len(experimental_data) + len(control_data),
+                effect_size_metric=effect_metric,
+                interpretation=self.interpret_result(p_value, effect_size, power)
+            )
+            
+            results.append(result)
+        
+        return results
+    
+    def calculate_rank_biserial_correlation(self, group1: np.ndarray, 
+                                          group2: np.ndarray) -> float:
+        """Calculate rank-biserial correlation effect size."""
+        u_stat, _ = stats.mannwhitneyu(group1, group2)
+        n1, n2 = len(group1), len(group2)
+        return 1 - (2 * u_stat) / (n1 * n2)
+    
+    def calculate_cliff_delta(self, group1: np.ndarray, group2: np.ndarray) -> float:
+        """Calculate Cliff's delta effect size."""
+        n1, n2 = len(group1), len(group2)
+        pairs = 0
+        
+        for x in group1:
+            for y in group2:
+                if x > y:
+                    pairs += 1
+                elif x < y:
+                    pairs -= 1
+        
+        return pairs / (n1 * n2)
+    
+    def calculate_effect_size_ci(self, group1: np.ndarray, group2: np.ndarray, 
+                               effect_size: float) -> Tuple[float, float]:
+        """Calculate confidence interval for effect size using bootstrap."""
+        n_bootstrap = 1000
+        bootstrap_effects = []
+        
+        for _ in range(n_bootstrap):
+            # Bootstrap sampling
+            bootstrap_g1 = np.random.choice(group1, size=len(group1), replace=True)
+            bootstrap_g2 = np.random.choice(group2, size=len(group2), replace=True)
+            
+            # Calculate effect size for bootstrap sample
+            bootstrap_effect = self.calculate_cohens_d(bootstrap_g1, bootstrap_g2)
+            bootstrap_effects.append(bootstrap_effect)
+        
+        alpha = 1 - self.config.confidence_level
+        ci_lower = np.percentile(bootstrap_effects, 100 * alpha / 2)
+        ci_upper = np.percentile(bootstrap_effects, 100 * (1 - alpha / 2))
+        
+        return ci_lower, ci_upper
+    
+    def calculate_statistical_power(self, group1: np.ndarray, group2: np.ndarray, 
+                                  effect_size: float) -> float:
+        """Calculate statistical power for the test."""
+        # Simplified power calculation - in practice would use specialized libraries
+        n1, n2 = len(group1), len(group2)
+        pooled_n = 2 / (1/n1 + 1/n2)
+        noncentrality = effect_size * np.sqrt(pooled_n / 2)
+        
+        # Critical value for two-tailed test
+        critical_value = stats.norm.ppf(1 - self.config.max_p_value / 2)
+        
+        # Power calculation
+        power = 1 - stats.norm.cdf(critical_value - noncentrality) + \
+                stats.norm.cdf(-critical_value - noncentrality)
+        
+        return min(power, 1.0)
+    
+    def interpret_result(self, p_value: float, effect_size: float, 
+                        power: float) -> str:
+        """Provide interpretation of statistical results."""
+        interpretations = []
+        
+        if p_value < self.config.max_p_value:
+            interpretations.append("statistically significant")
+        else:
+            interpretations.append("not statistically significant")
+        
+        if abs(effect_size) >= self.config.min_effect_size:
+            interpretations.append("practically significant")
+        else:
+            interpretations.append("not practically significant")
+        
+        if power >= self.config.statistical_power:
+            interpretations.append("adequate statistical power")
+        else:
+            interpretations.append("insufficient statistical power")
+        
+        return ", ".join(interpretations)
+
+
+class CrossPlatformValidator:
+    """Validator for cross-platform reproducibility."""
+    
+    def __init__(self, config: ValidationConfiguration):
+        self.config = config
+        self.logger = logging.getLogger(__name__)
+    
+    async def validate_cross_platform(self, algorithm_name: str, 
+                                    platform_data: Dict[str, List[float]]) -> CrossPlatformValidationResult:
+        """Validate algorithm performance across platforms."""
+        # Calculate consistency metrics
+        platform_means = {platform: np.mean(results) 
+                         for platform, results in platform_data.items()}
+        
+        # Overall consistency using coefficient of variation
+        overall_mean = np.mean(list(platform_means.values()))
+        overall_std = np.std(list(platform_means.values()))
+        consistency = 1 - (overall_std / overall_mean) if overall_mean != 0 else 0
+        
+        # Platform rankings
+        rankings = {}
+        sorted_platforms = sorted(platform_means.items(), key=lambda x: x[1], reverse=True)
+        for rank, (platform, _) in enumerate(sorted_platforms, 1):
+            rankings[platform] = rank
+        
+        # Variance analysis
+        variance_analysis = {platform: np.var(results) 
+                           for platform, results in platform_data.items()}
+        
+        # Reproducibility score using intraclass correlation
+        reproducibility_score = self.calculate_reproducibility_score(platform_data)
+        
+        return CrossPlatformValidationResult(
+            platform_results=platform_data,
+            overall_consistency=consistency,
+            platform_rankings=rankings,
+            variance_analysis=variance_analysis,
+            reproducibility_score=reproducibility_score
+        )
+    
+    def calculate_reproducibility_score(self, platform_data: Dict[str, List[float]]) -> float:
+        """Calculate reproducibility score across platforms."""
+        all_results = []
+        platform_labels = []
+        
+        for platform, results in platform_data.items():
+            all_results.extend(results)
+            platform_labels.extend([platform] * len(results))
+        
+        # Convert to DataFrame for easier analysis
+        df = pd.DataFrame({
+            'result': all_results,
+            'platform': platform_labels
+        })
+        
+        # Calculate ICC using ANOVA
+        groups = [group['result'].values for name, group in df.groupby('platform')]
+        
+        if len(groups) < 2:
+            return 1.0
+        
+        # One-way ANOVA
+        f_stat, p_value = stats.f_oneway(*groups)
+        
+        # Calculate ICC(1,1) - single measurement, absolute agreement
+        k = len(groups)  # number of platforms
+        n = len(all_results) // k  # number of measurements per platform
+        
+        ms_between = np.var([np.mean(group) for group in groups]) * n
+        ms_within = np.mean([np.var(group) for group in groups])
+        
+        if ms_between + (k-1) * ms_within == 0:
+            return 1.0
+        
+        icc = (ms_between - ms_within) / (ms_between + (k-1) * ms_within)
+        return max(0, min(1, icc))
 
 
 @dataclass
