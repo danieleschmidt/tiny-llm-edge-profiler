@@ -12,7 +12,7 @@ from .scalable_profiler import (
     BatchProfiler,
     async_profile_single,
     async_profile_batch,
-    run_concurrent_benchmark_demo
+    run_concurrent_benchmark_demo,
 )
 
 # Create aliases

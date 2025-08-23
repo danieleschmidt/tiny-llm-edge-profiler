@@ -24,6 +24,7 @@ import re
 
 class SupportedLanguage(Enum):
     """Comprehensive language support"""
+
     # Major languages
     ENGLISH = "en"
     CHINESE_SIMPLIFIED = "zh-CN"
@@ -64,7 +65,7 @@ class SupportedLanguage(Enum):
     ZULU = "zu"
     XHOSA = "xh"
     AFRIKAANS = "af"
-    
+
     @property
     def native_name(self) -> str:
         """Native language name"""
@@ -107,13 +108,14 @@ class SupportedLanguage(Enum):
             "ha": "Hausa",
             "zu": "isiZulu",
             "xh": "isiXhosa",
-            "af": "Afrikaans"
+            "af": "Afrikaans",
         }
         return names.get(self.value, self.value)
 
 
 class RegionalCompliance(Enum):
     """Regional compliance standards"""
+
     GDPR = "gdpr"  # EU
     CCPA = "ccpa"  # California
     PDPA = "pdpa"  # Singapore/Thailand
@@ -127,6 +129,7 @@ class RegionalCompliance(Enum):
 @dataclass
 class TranslationEntry:
     """Individual translation entry with metadata"""
+
     key: str
     text: str
     context: Optional[str] = None
@@ -140,6 +143,7 @@ class TranslationEntry:
 @dataclass
 class LanguagePackage:
     """Complete language package"""
+
     language: SupportedLanguage
     translations: Dict[str, TranslationEntry]
     cultural_adaptations: Dict[str, Any]
@@ -148,12 +152,14 @@ class LanguagePackage:
     currency_format: str
     rtl: bool = False  # Right-to-left writing
     pluralization_rules: Optional[Callable] = None
-    compliance_texts: Dict[RegionalCompliance, Dict[str, str]] = field(default_factory=dict)
+    compliance_texts: Dict[RegionalCompliance, Dict[str, str]] = field(
+        default_factory=dict
+    )
 
 
 class InternationalizationManager:
     """Comprehensive internationalization manager"""
-    
+
     def __init__(self, default_language: SupportedLanguage = SupportedLanguage.ENGLISH):
         self.default_language = default_language
         self.current_language = default_language
@@ -162,17 +168,17 @@ class InternationalizationManager:
         self.fallback_chain: List[SupportedLanguage] = [
             SupportedLanguage.ENGLISH,
             SupportedLanguage.SPANISH,
-            SupportedLanguage.CHINESE_SIMPLIFIED
+            SupportedLanguage.CHINESE_SIMPLIFIED,
         ]
         self.cultural_adaptations: Dict[str, Any] = {}
         self.compliance_manager = ComplianceTextManager()
-        
+
         # Initialize with base translations
         self._initialize_base_translations()
-        
+
     def _initialize_base_translations(self):
         """Initialize base translation packages for all supported languages"""
-        
+
         # Core profiling terms that need translation
         base_translations = {
             "profiling.start": "Starting profiling",
@@ -205,9 +211,9 @@ class InternationalizationManager:
             "compliance.data_processing": "Data processing notice",
             "compliance.consent_required": "Consent required",
             "accessibility.screen_reader": "Screen reader compatible",
-            "cultural.hardware_naming": "Hardware naming convention"
+            "cultural.hardware_naming": "Hardware naming convention",
         }
-        
+
         # Translations for each language (comprehensive but abbreviated here)
         language_translations = {
             SupportedLanguage.ENGLISH: base_translations,
@@ -242,7 +248,7 @@ class InternationalizationManager:
                 "compliance.data_processing": "Aviso de procesamiento de datos",
                 "compliance.consent_required": "Consentimiento requerido",
                 "accessibility.screen_reader": "Compatible con lector de pantalla",
-                "cultural.hardware_naming": "Convención de nomenclatura de hardware"
+                "cultural.hardware_naming": "Convención de nomenclatura de hardware",
             },
             SupportedLanguage.CHINESE_SIMPLIFIED: {
                 "profiling.start": "开始性能分析",
@@ -275,7 +281,7 @@ class InternationalizationManager:
                 "compliance.data_processing": "数据处理通知",
                 "compliance.consent_required": "需要同意",
                 "accessibility.screen_reader": "屏幕阅读器兼容",
-                "cultural.hardware_naming": "硬件命名约定"
+                "cultural.hardware_naming": "硬件命名约定",
             },
             SupportedLanguage.JAPANESE: {
                 "profiling.start": "プロファイリング開始",
@@ -308,10 +314,10 @@ class InternationalizationManager:
                 "compliance.data_processing": "データ処理通知",
                 "compliance.consent_required": "同意が必要です",
                 "accessibility.screen_reader": "スクリーンリーダー対応",
-                "cultural.hardware_naming": "ハードウェア命名規則"
-            }
+                "cultural.hardware_naming": "ハードウェア命名規則",
+            },
         }
-        
+
         # Initialize language packages
         for language, translations in language_translations.items():
             translation_entries = {}
@@ -320,15 +326,17 @@ class InternationalizationManager:
                     key=key,
                     text=text,
                     context=f"Core profiling term: {key}",
-                    accessibility_desc=f"Accessible description for {key}"
+                    accessibility_desc=f"Accessible description for {key}",
                 )
-            
+
             # Cultural adaptations
             cultural_adaptations = self._get_cultural_adaptations(language)
-            
+
             # Date/number formats
-            date_format, number_format, currency_format = self._get_format_conventions(language)
-            
+            date_format, number_format, currency_format = self._get_format_conventions(
+                language
+            )
+
             package = LanguagePackage(
                 language=language,
                 translations=translation_entries,
@@ -337,69 +345,89 @@ class InternationalizationManager:
                 number_format=number_format,
                 currency_format=currency_format,
                 rtl=language in [SupportedLanguage.ARABIC, SupportedLanguage.HEBREW],
-                compliance_texts=self.compliance_manager.get_compliance_texts(language)
+                compliance_texts=self.compliance_manager.get_compliance_texts(language),
             )
-            
+
             self.language_packages[language] = package
-    
+
     def _get_cultural_adaptations(self, language: SupportedLanguage) -> Dict[str, Any]:
         """Get cultural adaptations for specific language/region"""
-        
+
         adaptations = {
             SupportedLanguage.CHINESE_SIMPLIFIED: {
                 "hardware_naming": "prefer_chinese_brands",
                 "number_display": "use_chinese_numerals_for_large",
                 "color_preferences": {"success": "#FF6B6B", "warning": "#FFA726"},
-                "cultural_context": "emphasize_harmony_and_efficiency"
+                "cultural_context": "emphasize_harmony_and_efficiency",
             },
             SupportedLanguage.JAPANESE: {
                 "hardware_naming": "use_katakana_for_foreign_terms",
                 "number_display": "use_japanese_counters",
                 "color_preferences": {"success": "#4CAF50", "warning": "#FF9800"},
-                "cultural_context": "emphasize_precision_and_respect"
+                "cultural_context": "emphasize_precision_and_respect",
             },
             SupportedLanguage.ARABIC: {
                 "hardware_naming": "right_to_left_display",
                 "number_display": "use_arabic_indic_numerals",
                 "color_preferences": {"success": "#8BC34A", "warning": "#FF5722"},
-                "cultural_context": "emphasize_community_and_tradition"
+                "cultural_context": "emphasize_community_and_tradition",
             },
             SupportedLanguage.GERMAN: {
                 "hardware_naming": "use_technical_precision",
                 "number_display": "use_comma_decimal_separator",
                 "color_preferences": {"success": "#4CAF50", "warning": "#FF9800"},
-                "cultural_context": "emphasize_engineering_excellence"
+                "cultural_context": "emphasize_engineering_excellence",
             },
             SupportedLanguage.SPANISH: {
                 "hardware_naming": "use_gender_appropriate_articles",
                 "number_display": "use_period_thousands_separator",
                 "color_preferences": {"success": "#4CAF50", "warning": "#FF9800"},
-                "cultural_context": "emphasize_accessibility_and_community"
-            }
+                "cultural_context": "emphasize_accessibility_and_community",
+            },
         }
-        
+
         return adaptations.get(language, {})
-    
+
     def _get_format_conventions(self, language: SupportedLanguage) -> tuple:
         """Get date, number, and currency format conventions"""
-        
+
         formats = {
             SupportedLanguage.ENGLISH: ("%m/%d/%Y", "{:,.2f}", "${:,.2f}"),
-            SupportedLanguage.SPANISH: ("%d/%m/%Y", "{:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."), "€{:,.2f}"),
-            SupportedLanguage.FRENCH: ("%d/%m/%Y", "{:,.2f}".replace(",", " ").replace(".", ","), "{:,.2f} €"),
-            SupportedLanguage.GERMAN: ("%d.%m.%Y", "{:,.2f}".replace(",", ".").replace(".", ",", 1), "{:,.2f} €"),
-            SupportedLanguage.CHINESE_SIMPLIFIED: ("%Y年%m月%d日", "{:,.2f}", "¥{:,.2f}"),
+            SupportedLanguage.SPANISH: (
+                "%d/%m/%Y",
+                "{:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."),
+                "€{:,.2f}",
+            ),
+            SupportedLanguage.FRENCH: (
+                "%d/%m/%Y",
+                "{:,.2f}".replace(",", " ").replace(".", ","),
+                "{:,.2f} €",
+            ),
+            SupportedLanguage.GERMAN: (
+                "%d.%m.%Y",
+                "{:,.2f}".replace(",", ".").replace(".", ",", 1),
+                "{:,.2f} €",
+            ),
+            SupportedLanguage.CHINESE_SIMPLIFIED: (
+                "%Y年%m月%d日",
+                "{:,.2f}",
+                "¥{:,.2f}",
+            ),
             SupportedLanguage.JAPANESE: ("%Y年%m月%d日", "{:,.0f}", "¥{:,.0f}"),
             SupportedLanguage.KOREAN: ("%Y년 %m월 %d일", "{:,.0f}", "₩{:,.0f}"),
             SupportedLanguage.ARABIC: ("%d/%m/%Y", "{:,.2f}", "{:,.2f} ريال"),
-            SupportedLanguage.RUSSIAN: ("%d.%m.%Y", "{:,.2f}".replace(",", " "), "{:,.2f} ₽"),
+            SupportedLanguage.RUSSIAN: (
+                "%d.%m.%Y",
+                "{:,.2f}".replace(",", " "),
+                "{:,.2f} ₽",
+            ),
         }
-        
+
         return formats.get(language, formats[SupportedLanguage.ENGLISH])
-    
+
     def set_language(self, language: SupportedLanguage) -> bool:
         """Set current language"""
-        
+
         if language in self.language_packages:
             self.current_language = language
             logging.info(f"Language changed to {language.native_name}")
@@ -407,175 +435,189 @@ class InternationalizationManager:
         else:
             logging.warning(f"Language {language.value} not supported")
             return False
-    
+
     def get_text(self, key: str, **kwargs) -> str:
         """Get localized text with parameter substitution"""
-        
+
         # Try current language first
         text = self._get_text_from_package(self.current_language, key)
-        
+
         # Fall back through fallback chain
         if text is None:
             for fallback_lang in self.fallback_chain:
                 if fallback_lang != self.current_language:
                     text = self._get_text_from_package(fallback_lang, key)
                     if text is not None:
-                        logging.debug(f"Using fallback language {fallback_lang.value} for key {key}")
+                        logging.debug(
+                            f"Using fallback language {fallback_lang.value} for key {key}"
+                        )
                         break
-        
+
         # Ultimate fallback
         if text is None:
             text = f"[{key}]"
             logging.warning(f"No translation found for key: {key}")
-        
+
         # Parameter substitution
         if kwargs:
             try:
                 text = text.format(**kwargs)
             except (KeyError, ValueError) as e:
                 logging.warning(f"Parameter substitution failed for key {key}: {e}")
-        
+
         return text
-    
-    def _get_text_from_package(self, language: SupportedLanguage, key: str) -> Optional[str]:
+
+    def _get_text_from_package(
+        self, language: SupportedLanguage, key: str
+    ) -> Optional[str]:
         """Get text from specific language package"""
-        
+
         if language in self.language_packages:
             package = self.language_packages[language]
             if key in package.translations:
                 return package.translations[key].text
-        
+
         return None
-    
+
     def get_cultural_adaptation(self, key: str) -> Any:
         """Get cultural adaptation for current language"""
-        
+
         if self.current_language in self.language_packages:
             package = self.language_packages[self.current_language]
             return package.cultural_adaptations.get(key)
-        
+
         return None
-    
+
     def format_number(self, number: float) -> str:
         """Format number according to current locale"""
-        
+
         if self.current_language in self.language_packages:
             package = self.language_packages[self.current_language]
             try:
                 return package.number_format.format(number)
             except (ValueError, KeyError):
                 pass
-        
+
         return f"{number:,.2f}"
-    
+
     def format_currency(self, amount: float) -> str:
         """Format currency according to current locale"""
-        
+
         if self.current_language in self.language_packages:
             package = self.language_packages[self.current_language]
             try:
                 return package.currency_format.format(amount)
             except (ValueError, KeyError):
                 pass
-        
+
         return f"${amount:,.2f}"
-    
+
     def format_date(self, date: datetime) -> str:
         """Format date according to current locale"""
-        
+
         if self.current_language in self.language_packages:
             package = self.language_packages[self.current_language]
             try:
                 return date.strftime(package.date_format)
             except (ValueError, AttributeError):
                 pass
-        
+
         return date.strftime("%Y-%m-%d")
-    
+
     def is_rtl(self) -> bool:
         """Check if current language is right-to-left"""
-        
+
         if self.current_language in self.language_packages:
             return self.language_packages[self.current_language].rtl
-        
+
         return False
-    
+
     def get_compliance_text(self, compliance: RegionalCompliance, key: str) -> str:
         """Get compliance-specific text"""
-        
+
         return self.compliance_manager.get_compliance_text(
             self.current_language, compliance, key
         )
-    
-    def add_translation(self, language: SupportedLanguage, key: str, text: str, 
-                       context: Optional[str] = None, **metadata) -> bool:
+
+    def add_translation(
+        self,
+        language: SupportedLanguage,
+        key: str,
+        text: str,
+        context: Optional[str] = None,
+        **metadata,
+    ) -> bool:
         """Add or update translation"""
-        
+
         if language not in self.language_packages:
             logging.warning(f"Language package not initialized for {language.value}")
             return False
-        
+
         entry = TranslationEntry(
             key=key,
             text=text,
             context=context,
             metadata=metadata,
-            last_updated=datetime.now()
+            last_updated=datetime.now(),
         )
-        
+
         self.language_packages[language].translations[key] = entry
-        
+
         # Clear cache for this key
         if language.value in self.translation_cache:
             self.translation_cache[language.value].pop(key, None)
-        
+
         logging.debug(f"Added translation for {language.value}: {key} = {text}")
         return True
-    
+
     def get_supported_languages(self) -> List[Dict[str, str]]:
         """Get list of supported languages with native names"""
-        
+
         return [
             {
                 "code": lang.value,
                 "name": lang.native_name,
-                "english_name": lang.name.replace("_", " ").title()
+                "english_name": lang.name.replace("_", " ").title(),
             }
             for lang in self.language_packages.keys()
         ]
-    
+
     def detect_language_from_locale(self) -> Optional[SupportedLanguage]:
         """Detect language from system locale"""
-        
+
         try:
             system_locale = locale.getlocale()[0]
             if system_locale:
                 # Extract language code
-                lang_code = system_locale.split('_')[0].lower()
-                
+                lang_code = system_locale.split("_")[0].lower()
+
                 # Map to supported languages
                 for supported_lang in SupportedLanguage:
                     if supported_lang.value.startswith(lang_code):
                         return supported_lang
-                        
+
         except Exception as e:
             logging.debug(f"Failed to detect system locale: {e}")
-        
+
         return None
-    
-    async def load_translations_from_file(self, filepath: Path, language: SupportedLanguage) -> bool:
+
+    async def load_translations_from_file(
+        self, filepath: Path, language: SupportedLanguage
+    ) -> bool:
         """Load translations from JSON file"""
-        
+
         try:
-            with open(filepath, 'r', encoding='utf-8') as f:
+            with open(filepath, "r", encoding="utf-8") as f:
                 translations_data = json.load(f)
-            
+
             if language not in self.language_packages:
-                logging.warning(f"Language package not initialized for {language.value}")
+                logging.warning(
+                    f"Language package not initialized for {language.value}"
+                )
                 return False
-            
+
             package = self.language_packages[language]
-            
+
             for key, data in translations_data.items():
                 if isinstance(data, str):
                     # Simple string translation
@@ -584,51 +626,57 @@ class InternationalizationManager:
                     # Rich translation with metadata
                     entry = TranslationEntry(
                         key=key,
-                        text=data.get('text', ''),
-                        context=data.get('context'),
-                        metadata=data.get('metadata', {}),
-                        translator_notes=data.get('translator_notes'),
-                        accessibility_desc=data.get('accessibility_desc'),
-                        cultural_notes=data.get('cultural_notes')
+                        text=data.get("text", ""),
+                        context=data.get("context"),
+                        metadata=data.get("metadata", {}),
+                        translator_notes=data.get("translator_notes"),
+                        accessibility_desc=data.get("accessibility_desc"),
+                        cultural_notes=data.get("cultural_notes"),
                     )
-                
+
                 package.translations[key] = entry
-            
-            logging.info(f"Loaded {len(translations_data)} translations for {language.native_name}")
+
+            logging.info(
+                f"Loaded {len(translations_data)} translations for {language.native_name}"
+            )
             return True
-            
+
         except Exception as e:
             logging.error(f"Failed to load translations from {filepath}: {e}")
             return False
-    
-    async def save_translations_to_file(self, filepath: Path, language: SupportedLanguage) -> bool:
+
+    async def save_translations_to_file(
+        self, filepath: Path, language: SupportedLanguage
+    ) -> bool:
         """Save translations to JSON file"""
-        
+
         if language not in self.language_packages:
             logging.warning(f"Language package not found for {language.value}")
             return False
-        
+
         try:
             package = self.language_packages[language]
             translations_data = {}
-            
+
             for key, entry in package.translations.items():
                 translations_data[key] = {
-                    'text': entry.text,
-                    'context': entry.context,
-                    'metadata': entry.metadata,
-                    'last_updated': entry.last_updated.isoformat(),
-                    'translator_notes': entry.translator_notes,
-                    'accessibility_desc': entry.accessibility_desc,
-                    'cultural_notes': entry.cultural_notes
+                    "text": entry.text,
+                    "context": entry.context,
+                    "metadata": entry.metadata,
+                    "last_updated": entry.last_updated.isoformat(),
+                    "translator_notes": entry.translator_notes,
+                    "accessibility_desc": entry.accessibility_desc,
+                    "cultural_notes": entry.cultural_notes,
                 }
-            
-            with open(filepath, 'w', encoding='utf-8') as f:
+
+            with open(filepath, "w", encoding="utf-8") as f:
                 json.dump(translations_data, f, ensure_ascii=False, indent=2)
-            
-            logging.info(f"Saved {len(translations_data)} translations for {language.native_name}")
+
+            logging.info(
+                f"Saved {len(translations_data)} translations for {language.native_name}"
+            )
             return True
-            
+
         except Exception as e:
             logging.error(f"Failed to save translations to {filepath}: {e}")
             return False
@@ -636,13 +684,15 @@ class InternationalizationManager:
 
 class ComplianceTextManager:
     """Manages compliance-specific text for different regions"""
-    
+
     def __init__(self):
         self.compliance_texts = self._initialize_compliance_texts()
-    
-    def _initialize_compliance_texts(self) -> Dict[SupportedLanguage, Dict[RegionalCompliance, Dict[str, str]]]:
+
+    def _initialize_compliance_texts(
+        self,
+    ) -> Dict[SupportedLanguage, Dict[RegionalCompliance, Dict[str, str]]]:
         """Initialize compliance texts for all languages and regions"""
-        
+
         # This is a comprehensive but abbreviated example
         compliance_texts = {
             SupportedLanguage.ENGLISH: {
@@ -651,14 +701,14 @@ class ComplianceTextManager:
                     "consent_request": "Do you consent to performance data collection for optimization purposes?",
                     "data_retention": "Performance data is retained for 90 days and then automatically deleted.",
                     "your_rights": "You have the right to access, rectify, or delete your data at any time.",
-                    "contact_dpo": "Contact our Data Protection Officer at privacy@terragon.dev"
+                    "contact_dpo": "Contact our Data Protection Officer at privacy@terragon.dev",
                 },
                 RegionalCompliance.CCPA: {
                     "data_processing_notice": "We collect hardware performance metrics to improve our profiling algorithms. This constitutes a business purpose under CCPA.",
                     "opt_out_rights": "You have the right to opt out of the sale of your personal information (we do not sell data).",
                     "data_categories": "We collect: device identifiers, performance metrics, usage patterns.",
-                    "contact_info": "For privacy inquiries, contact privacy@terragon.dev or 1-800-PRIVACY."
-                }
+                    "contact_info": "For privacy inquiries, contact privacy@terragon.dev or 1-800-PRIVACY.",
+                },
             },
             SupportedLanguage.SPANISH: {
                 RegionalCompliance.GDPR: {
@@ -666,7 +716,7 @@ class ComplianceTextManager:
                     "consent_request": "¿Consiente la recopilación de datos de rendimiento con fines de optimización?",
                     "data_retention": "Los datos de rendimiento se conservan durante 90 días y luego se eliminan automáticamente.",
                     "your_rights": "Tiene derecho a acceder, rectificar o eliminar sus datos en cualquier momento.",
-                    "contact_dpo": "Contacte a nuestro Oficial de Protección de Datos en privacy@terragon.dev"
+                    "contact_dpo": "Contacte a nuestro Oficial de Protección de Datos en privacy@terragon.dev",
                 }
             },
             SupportedLanguage.CHINESE_SIMPLIFIED: {
@@ -675,35 +725,40 @@ class ComplianceTextManager:
                     "consent_request": "您是否同意为优化目的收集性能数据？",
                     "data_retention": "性能数据保留90天后自动删除。",
                     "your_rights": "您有权随时访问、纠正或删除您的数据。",
-                    "contact_dpo": "请联系我们的数据保护官员：privacy@terragon.dev"
+                    "contact_dpo": "请联系我们的数据保护官员：privacy@terragon.dev",
                 }
-            }
+            },
         }
-        
+
         return compliance_texts
-    
-    def get_compliance_texts(self, language: SupportedLanguage) -> Dict[RegionalCompliance, Dict[str, str]]:
+
+    def get_compliance_texts(
+        self, language: SupportedLanguage
+    ) -> Dict[RegionalCompliance, Dict[str, str]]:
         """Get all compliance texts for a language"""
         return self.compliance_texts.get(language, {})
-    
-    def get_compliance_text(self, language: SupportedLanguage, compliance: RegionalCompliance, key: str) -> str:
+
+    def get_compliance_text(
+        self, language: SupportedLanguage, compliance: RegionalCompliance, key: str
+    ) -> str:
         """Get specific compliance text"""
-        
+
         lang_texts = self.compliance_texts.get(language, {})
         compliance_texts = lang_texts.get(compliance, {})
         text = compliance_texts.get(key)
-        
+
         if text is None:
             # Fallback to English
             en_texts = self.compliance_texts.get(SupportedLanguage.ENGLISH, {})
             en_compliance = en_texts.get(compliance, {})
             text = en_compliance.get(key, f"[{compliance.value}.{key}]")
-        
+
         return text
 
 
 # Global instance for easy access
 _i18n_manager: Optional[InternationalizationManager] = None
+
 
 def get_i18n_manager() -> InternationalizationManager:
     """Get global internationalization manager instance"""
@@ -712,26 +767,32 @@ def get_i18n_manager() -> InternationalizationManager:
         _i18n_manager = InternationalizationManager()
     return _i18n_manager
 
-def init_i18n(language: Optional[SupportedLanguage] = None) -> InternationalizationManager:
+
+def init_i18n(
+    language: Optional[SupportedLanguage] = None,
+) -> InternationalizationManager:
     """Initialize internationalization with optional language"""
     global _i18n_manager
-    
+
     if language is None:
         # Try to detect from system
         temp_manager = InternationalizationManager()
         detected_language = temp_manager.detect_language_from_locale()
         language = detected_language or SupportedLanguage.ENGLISH
-    
+
     _i18n_manager = InternationalizationManager(language)
     return _i18n_manager
+
 
 def _(key: str, **kwargs) -> str:
     """Shorthand for getting localized text"""
     return get_i18n_manager().get_text(key, **kwargs)
 
+
 def set_language(language: SupportedLanguage) -> bool:
     """Set global language"""
     return get_i18n_manager().set_language(language)
+
 
 def get_supported_languages() -> List[Dict[str, str]]:
     """Get list of supported languages"""
